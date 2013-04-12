@@ -60,43 +60,7 @@ namespace FunTools
 			return WithInvoker(action, Setup.UIInvoker);
 		}
 
-		public static Await<Option<Result<T>>[]> All<T>(params Await<T>[] sources)
-		{
-			return completed =>
-			{
-				var sourceCount = sources.Length;
-				var results = new Option<Result<T>>[sourceCount];
-				var cancels = new Cancel[sourceCount];
-				var completer = new CompleteLast(sourceCount);
-
-				var subscription = Result.TryGet(() =>
-				{
-					for (var i = 0; i < sourceCount; i++)
-					{
-						var index = i;
-						cancels[i] = sources[i](result =>
-						{
-							results[index] = result;
-							completer.Do(() => completed(Success.Of(results)));
-						});
-					}
-				});
-
-				if (subscription.IsFailure)
-				{
-					completer.Do(() => completed(Failure.Of<Option<Result<T>>[]>(subscription.Failure)));
-					return () => { };
-				}
-
-				return () => completer.Do(() =>
-				{
-					cancels.ForEach(_ => _());
-					completed(Option<Result<Option<Result<T>>[]>>.None);
-				});
-			};
-		}
-
-		public static Await<R> AnyOrDefault<T, R>(Func<Result<T>, int, Option<R>> choose, R orDefault, params Await<T>[] sources)
+		public static Await<R> SomeOrDefault<T, R>(Func<Result<T>, int, Option<R>> chooseSome, R orDefault, params Await<T>[] sources)
 		{
 			return completed =>
 			{
@@ -115,10 +79,10 @@ namespace FunTools
 					var index = i; // save index to use in lambda
 					var current = sources[i](result =>
 					{
-						if (result.IsNone)
+						if (result.IsNone) // It means that we ignoring external canceling.
 							return;
 
-						var choice = Result.TryGet(() => choose(result.Some, index));
+						var choice = Result.TryGet(() => chooseSome(result.Some, index));
 						if (choice.IsFailure)
 						{
 							completeWith(Failure.Of<R>(choice.Failure));
@@ -141,6 +105,20 @@ namespace FunTools
 
 				return () => completeWith(None.Of<Result<R>>());
 			};
+		}
+
+		public static Await<Result<T>[]> All<T>(params Await<T>[] sources)
+		{
+			var results = new Result<T>[sources.Length];
+			return SomeOrDefault((x, i) => None.Of<Result<T>[]>().Of(() => results[i] = x), results, sources);
+		}
+
+		public static Await<T> Any<T>(params Await<T>[] sources)
+		{
+			var ignored = default(T);
+			return SomeOrDefault(
+				(x, i) => Some.Of(x.Success), // if success fails, then we are automatically propagating this error into result Await<T> 
+				ignored, sources);
 		}
 
 		public static Option<Result<T>> Return<T>(this Await<T> source, int timeoutMilliseconds = -1)
@@ -386,8 +364,8 @@ namespace FunTools
 
 			var genericArgs = type.GetGenericArguments();
 			var genericArgsString = type.IsGenericTypeDefinition
-				? new string(',', genericArgs.Length - 1)
-				: String.Join(", ", genericArgs.Select(x => x.Display()).ToArray());
+										? new string(',', genericArgs.Length - 1)
+										: String.Join(", ", genericArgs.Select(x => x.Display()).ToArray());
 
 			return name.Substring(0, name.LastIndexOf('`')) + "<" + genericArgsString + ">";
 		}
@@ -408,6 +386,12 @@ namespace FunTools
 		{
 			foreach (var x in source)
 				action(x);
+		}
+
+		public static T Of<T>(this T result, Action action)
+		{
+			action();
+			return result;
 		}
 	}
 
