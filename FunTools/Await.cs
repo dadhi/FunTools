@@ -16,11 +16,11 @@ namespace FunTools
 	// Await.Any(Await.Async(..), Await.Event(..), Await.Try())
 	// Await.Async(..).Return()
 
-	public delegate Cancelable Await<T>(OnCompleted<T> onCompleted);
+	public delegate Cancel Await<T>(OnCompleted<T> onCompleted);
 
 	public delegate void OnCompleted<T>(Option<Result<T>> result);
 
-	public delegate void Cancelable();
+	public delegate void Cancel();
 
 	public static class Await
 	{
@@ -33,7 +33,7 @@ namespace FunTools
 			};
 		}
 
-		public static Await<T> WithInvoker<T>(Func<T> action, Func<Action, Cancelable> invoker)
+		public static Await<T> WithInvoker<T>(Func<T> action, Func<Action, Cancel> invoker)
 		{
 			return completed =>
 			{
@@ -66,7 +66,7 @@ namespace FunTools
 			{
 				var sourceCount = sources.Length;
 				var results = new Option<Result<T>>[sourceCount];
-				var cancels = new Cancelable[sourceCount];
+				var cancels = new Cancel[sourceCount];
 				var completer = new CompleteLast(sourceCount);
 
 				var subscription = Result.TryGet(() =>
@@ -96,51 +96,50 @@ namespace FunTools
 			};
 		}
 
-		public static Await<U> Any<T, U>(Func<Result<T>, int, Option<U>> choose, params Await<T>[] sources)
+		public static Await<R> AnyOrDefault<T, R>(Func<Result<T>, int, Option<R>> choose, R orDefault, params Await<T>[] sources)
 		{
 			return completed =>
 			{
-				var cancels = Stack<Cancelable>.Empty;
-				var completer = new CompleteFirst();
+				var cancels = Stack<Cancel>.Empty;
+				var completeFirst = new CompleteFirst();
+				var completeLast = new CompleteLast(sources.Length);
 
-				var subscription = Result.TryGet(() =>
+				Action<Option<Result<R>>> completeWith = result => completeFirst.Do(() =>
 				{
-					for (var i = 0; i < sources.Length && !completer.IsDone; i++)
-					{
-						var index = i; // save inside local scope var to use in lambda below
-
-						Cancelable cancel = null;
-						cancel = sources[i](result =>
-						{
-							if (result.IsNone)
-								return;
-
-							var chosen = Result.TryGet(() => choose(result.Some, index));
-							if (chosen.IsSuccess && chosen.Success.IsSome)
-							{
-								completer.Do(() =>
-								{
-									cancels.Where(x => x != cancel).ForEach(_ => _());
-									completed(Success.Of(chosen.Success.Some));
-								});
-							}
-						});
-
-						cancels = cancels.Add(cancel);
-					}
+					cancels.ForEach(x => x());
+					completed(result);
 				});
 
-				if (subscription.IsFailure)
+				for (var i = 0; i < sources.Length; i++)
 				{
-					completer.Do(() => completed(Failure.Of<U>(subscription.Failure)));
-					return () => { };
+					var index = i; // save index to use in lambda
+					var current = sources[i](result =>
+					{
+						if (result.IsNone)
+							return;
+
+						var choice = Result.TryGet(() => choose(result.Some, index));
+						if (choice.IsFailure)
+						{
+							completeWith(Failure.Of<R>(choice.Failure));
+						}
+						else if (choice.Success.IsSome)
+						{
+							completeWith(Success.Of(choice.Success.Some));
+						}
+						else // at last try to complete whole workflow with default result.
+						{
+							completeLast.Do(() => completeFirst.Do(() => completed(Success.Of(orDefault))));
+						}
+					});
+
+					if (completeFirst.IsDone) // if all is done just return
+						return () => { };
+
+					cancels = cancels.Add(current);
 				}
 
-				return () => completer.Do(() =>
-				{
-					cancels.ForEach(_ => _());
-					completed(None.Of<Result<U>>());
-				});
+				return () => completeWith(None.Of<Result<R>>());
 			};
 		}
 
@@ -164,21 +163,21 @@ namespace FunTools
 
 		public static class Setup
 		{
-			public static Func<Action, Cancelable> AsyncInvoker = Defaults.QueueToThreadPool;
+			public static Func<Action, Cancel> AsyncInvoker = Defaults.QueueToThreadPool;
 
-			public static Func<Action, Cancelable> UIInvoker = Defaults.JustInvoke;
+			public static Func<Action, Cancel> UIInvoker = Defaults.JustInvoke;
 
 			public static Action<Exception> LogFailure = ignored => { };
 
 			public static class Defaults
 			{
-				public static Cancelable JustInvoke(Action action)
+				public static Cancel JustInvoke(Action action)
 				{
 					action();
 					return () => { };
 				}
 
-				public static Cancelable QueueToThreadPool(Action action)
+				public static Cancel QueueToThreadPool(Action action)
 				{
 					ThreadPool.QueueUserWorkItem(_ => action());
 					return () => { };
@@ -247,7 +246,7 @@ namespace FunTools
 
 		#region Implementation
 
-		private static Cancelable DoAwait<T>(IEnumerator<Awaiting<T>> source, OnCompleted<T> completed, CompleteFirst completer)
+		private static Cancel DoAwait<T>(IEnumerator<Awaiting<T>> source, OnCompleted<T> completed, CompleteFirst completer)
 		{
 			if (completer.IsDone)
 				return () => { };
@@ -286,7 +285,7 @@ namespace FunTools
 				return () => { };
 			}
 
-			Cancelable cancelNext = null;
+			Cancel cancelNext = null;
 			var cancelCurrent = currentAwaiting.Proceed(
 				_ => cancelNext = DoAwait(source, completed, completer));
 
