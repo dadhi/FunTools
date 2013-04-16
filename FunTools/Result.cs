@@ -5,9 +5,9 @@ namespace FunTools
 {
 	public static class Success
 	{
-		public static Result<T> Of<T>(T value)
+		public static Result<T> Of<T>(T result)
 		{
-			return new Result<T>(value);
+			return new Result<T>(result);
 		}
 	}
 
@@ -53,9 +53,9 @@ namespace FunTools
 			return source.Match(x => Success.Of(map(x)), Failure.Of<R>);
 		}
 
-		public static T Unwrap<T>(this Result<T> source, T defaultValue = default(T))
+		public static T SuccessOrDefault<T>(this Result<T> source, T orDefault = default(T))
 		{
-			return source.IsSuccess ? source.Success : defaultValue;
+			return source.IsSuccess ? source.Success : orDefault;
 		}
 
 		/// <summary>
@@ -78,9 +78,7 @@ namespace FunTools
 					(Action<Exception>)Delegate.CreateDelegate(
 						typeof(Action<Exception>),
 						null,
-						typeof(Exception).GetMethod(
-							"InternalPreserveStackTrace",
-							BindingFlags.Instance | BindingFlags.NonPublic));
+						typeof(Exception).GetMethod("InternalPreserveStackTrace", BindingFlags.Instance | BindingFlags.NonPublic));
 			}
 		}
 	}

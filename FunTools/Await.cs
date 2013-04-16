@@ -16,36 +16,36 @@ namespace FunTools
 	// Await.Any(Await.Async(..), Await.Event(..), Await.Try())
 	// Await.Async(..).Return()
 
-	public delegate Cancel Await<T>(OnCompleted<T> onCompleted);
+	public delegate Cancelable Await<T>(Complete<T> complete);
 
-	public delegate void OnCompleted<T>(Option<Result<T>> result);
+	public delegate void Complete<T>(Option<Result<T>> result);
 
-	public delegate void Cancel();
+	public delegate void Cancelable();
 
 	public static class Await
 	{
 		public static Await<T> Try<T>(Func<T> action)
 		{
-			return completed =>
+			return complete =>
 			{
-				completed(Result.TryGet(action, Setup.LogFailure));
-				return () => { };
+				complete(Result.TryGet(action, Setup.LogFailure));
+				return NothingToCancel;
 			};
 		}
 
-		public static Await<T> WithInvoker<T>(Func<T> action, Func<Action, Cancel> invoker)
+		public static Await<T> WithInvoker<T>(Func<T> action, Func<Action, Cancelable> invoker)
 		{
-			return completed =>
+			return complete =>
 			{
 				var completer = new CompleteFirst();
 
 				var cancel = invoker(() => Try(action)(
-					result => completer.Do(() => completed(result))));
+					result => completer.Do(() => complete(result))));
 
 				return () => completer.Do(() =>
 				{
 					cancel();
-					completed(None.Of<Result<T>>());
+					complete(None.Of<Result<T>>());
 				});
 			};
 		}
@@ -60,18 +60,18 @@ namespace FunTools
 			return WithInvoker(action, Setup.UIInvoker);
 		}
 
-		public static Await<R> SomeOrDefault<T, R>(Func<Result<T>, int, Option<R>> chooseSome, R orDefault, params Await<T>[] sources)
+		public static Await<R> AnyOrDefault<T, R>(Func<Result<T>, int, Option<R>> chooseValue, R orDefault, params Await<T>[] sources)
 		{
-			return completed =>
+			return complete =>
 			{
-				var cancels = Stack<Cancel>.Empty;
+				var cancels = Stack<Cancelable>.Empty;
 				var completeFirst = new CompleteFirst();
 				var completeLast = new CompleteLast(sources.Length);
 
-				Action<Option<Result<R>>> completeWith = result => completeFirst.Do(() =>
+				Complete<R> cancelRestAndComplete = result => completeFirst.Do(() =>
 				{
 					cancels.ForEach(x => x());
-					completed(result);
+					complete(result);
 				});
 
 				for (var i = 0; i < sources.Length; i++)
@@ -82,50 +82,115 @@ namespace FunTools
 						if (result.IsNone) // It means that we ignoring external canceling.
 							return;
 
-						var choice = Result.TryGet(() => chooseSome(result.Some, index));
+						var choice = Result.TryGet(() => chooseValue(result.Value, index));
 						if (choice.IsFailure)
 						{
-							completeWith(Failure.Of<R>(choice.Failure));
+							cancelRestAndComplete(Failure.Of<R>(choice.Failure));
 						}
-						else if (choice.Success.IsSome)
+						else if (choice.Success.HasValue)
 						{
-							completeWith(Success.Of(choice.Success.Some));
+							cancelRestAndComplete(Success.Of(choice.Success.Value));
 						}
 						else // at last try to complete whole workflow with default result.
 						{
-							completeLast.Do(() => completeFirst.Do(() => completed(Success.Of(orDefault))));
+							completeLast.Do(() => completeFirst.Do(() => complete(Success.Of(orDefault))));
 						}
 					});
 
 					if (completeFirst.IsDone) // if all is done just return
-						return () => { };
+						return NothingToCancel;
 
 					cancels = cancels.Add(current);
 				}
 
-				return () => completeWith(None.Of<Result<R>>());
+				return () => cancelRestAndComplete(None.Of<Result<R>>());
 			};
 		}
 
 		public static Await<Result<T>[]> All<T>(params Await<T>[] sources)
 		{
 			var results = new Result<T>[sources.Length];
-			return SomeOrDefault((x, i) => None.Of<Result<T>[]>().Of(() => results[i] = x), results, sources);
+			return AnyOrDefault(
+				(x, i) => None.Of<Result<T>[]>().Of(() => results[i] = x),
+				results, sources);
 		}
 
 		public static Await<T> Any<T>(params Await<T>[] sources)
 		{
 			var ignored = default(T);
-			return SomeOrDefault(
-				(x, i) => Some.Of(x.Success), // if success fails, then we are automatically propagating this error into result Await<T> 
+			return AnyOrDefault(
+				(x, i) => Value.Of(x.Success), // if success fails, then we are automatically propagating this error into result Await<T> 
 				ignored, sources);
 		}
 
-		public static Option<Result<T>> Return<T>(this Await<T> source, int timeoutMilliseconds = -1)
+		public static Await<R> WithEvent<TEventArgs, TEventHandler, R>(
+			Func<Option<TEventArgs>, Option<R>> choose,
+			Action<TEventHandler> subscribe,
+			Action<TEventHandler> unsubscribe,
+			Func<Action<object, TEventArgs>, TEventHandler> convert)
+		{
+			return complete =>
+			{
+				// Create helper action to safely invoke choose action and supply result to completed.
+				Func<Option<TEventArgs>, Complete<R>, bool> tryChooseAndComplete = (e, doComplete) =>
+				{
+					var choice = Result.TryGet(() => choose(e));
+					if (choice.IsSuccess && choice.Success.IsNone)
+						return false;
+
+					doComplete(choice.Map(x => x.Value));
+					return true;
+				};
+
+				// When some result is chosen or exception thrown in process,
+				// Then handle it and return immediately - Nothing to Cancel here.
+				if (tryChooseAndComplete(None.Of<TEventArgs>(), complete))
+					return NothingToCancel;
+
+				var eventHandler = default(TEventHandler);
+				var completeFirst = new CompleteFirst();
+				Complete<R> completeAndUnsubscribe = x => completeFirst.Do(() =>
+				{
+					var unsubscription = Result.TryGet(() => unsubscribe(eventHandler));
+
+					// Replacing original failure with unsubscription failure if got one.
+					complete(unsubscription.IsFailure ? Failure.Of<R>(unsubscription.Failure) : x);
+				});
+
+				// Convert action to event handler delegate (ignoring event source) and subscribe it.
+				var subscription = Result.TryGet(() => subscribe(
+					eventHandler = convert((_, e) => tryChooseAndComplete(e, completeAndUnsubscribe))));
+
+				if (subscription.IsFailure)
+				{
+					complete(Failure.Of<R>(subscription.Failure));
+					return NothingToCancel;
+				}
+
+				// In case that during subscribe, condition become true (e.g. event was already raised and will never be raised again)
+				// We are checking condition one more time.
+				if (tryChooseAndComplete(None.Of<TEventArgs>(), completeAndUnsubscribe))
+					return NothingToCancel;
+
+				// Return Cancel with None result.
+				return () => completeAndUnsubscribe(None.Of<Result<R>>());
+			};
+		}
+
+		public static Await<R> Event<TEventArgs, TEventHandler, R>(
+			Func<TEventArgs, Option<R>> choose,
+			Action<TEventHandler> subscribe,
+			Action<TEventHandler> unsubscribe,
+			Func<Action<object, TEventArgs>, TEventHandler> convert)
+		{
+			return WithEvent(e => e.HasValue ? choose(e.Value) : None.Of<R>(), subscribe, unsubscribe, convert);
+		}
+
+		public static Option<Result<T>> WaitResult<T>(this Await<T> source, int timeoutMilliseconds = -1)
 		{
 			var completed = new AutoResetEvent(false);
 
-			var result = Option<Result<T>>.None;
+			var result = None.Of<Result<T>>();
 			var cancel = source(x =>
 			{
 				result = x;
@@ -136,32 +201,34 @@ namespace FunTools
 				return result;
 
 			cancel();
-			return Option<Result<T>>.None;
+			return None.Of<Result<T>>();
 		}
 
 		public static class Setup
 		{
-			public static Func<Action, Cancel> AsyncInvoker = Defaults.QueueToThreadPool;
+			public static Func<Action, Cancelable> AsyncInvoker = Defaults.QueueToThreadPool;
 
-			public static Func<Action, Cancel> UIInvoker = Defaults.JustInvoke;
+			public static Func<Action, Cancelable> UIInvoker = Defaults.JustInvoke;
 
 			public static Action<Exception> LogFailure = ignored => { };
 
 			public static class Defaults
 			{
-				public static Cancel JustInvoke(Action action)
+				public static Cancelable JustInvoke(Action action)
 				{
 					action();
-					return () => { };
+					return NothingToCancel;
 				}
 
-				public static Cancel QueueToThreadPool(Action action)
+				public static Cancelable QueueToThreadPool(Action action)
 				{
 					ThreadPool.QueueUserWorkItem(_ => action());
-					return () => { };
+					return NothingToCancel;
 				}
 			}
 		}
+
+		public static Cancelable NothingToCancel = () => { };
 	}
 
 	public sealed class Awaiting<T>
@@ -224,10 +291,10 @@ namespace FunTools
 
 		#region Implementation
 
-		private static Cancel DoAwait<T>(IEnumerator<Awaiting<T>> source, OnCompleted<T> completed, CompleteFirst completer)
+		private static Cancelable DoAwait<T>(IEnumerator<Awaiting<T>> source, Complete<T> completed, CompleteFirst completer)
 		{
 			if (completer.IsDone)
-				return () => { };
+				return NothingToCancel;
 
 			var movingNext = Result.TryGet(() =>
 			{
@@ -235,35 +302,35 @@ namespace FunTools
 				{
 					var awaiting = source.Current;
 					if (awaiting == null)
-						throw new InvalidOperationException(EXPECTING_NOT_NULL_AWAITING_YIELDED.Of(typeof(Awaiting<T>)));
+						throw new InvalidOperationException(EXPECTING_NOTNULL_AWAITING_YIELDED.Of(typeof(Awaiting<T>)));
 					return awaiting;
 				}
 
 				if (typeof(T) != typeof(Empty))
-					throw new InvalidOperationException(EXPECTING_NON_EMPTY_RESULT.Of(typeof(T)));
+					throw new InvalidOperationException(EXPECTING_NONEMPTY_RESULT.Of(typeof(T)));
 				return None.Of<Awaiting<T>>();
 			});
 
 			if (movingNext.IsFailure)
 			{
 				completer.Do(() => completed(Failure.Of<T>(movingNext.Failure)));
-				return () => { };
+				return NothingToCancel;
 			}
 
 			if (movingNext.Success.IsNone)
 			{
 				completer.Do(() => completed(Success.Of((T)(object)Empty.Value)));
-				return () => { };
+				return NothingToCancel;
 			}
 
-			var currentAwaiting = movingNext.Success.Some;
+			var currentAwaiting = movingNext.Success.Value;
 			if (currentAwaiting.IsCompleted)
 			{
 				completer.Do(() => completed(Success.Of(currentAwaiting.Result)));
-				return () => { };
+				return NothingToCancel;
 			}
 
-			Cancel cancelNext = null;
+			Cancelable cancelNext = null;
 			var cancelCurrent = currentAwaiting.Proceed(
 				_ => cancelNext = DoAwait(source, completed, completer));
 
@@ -274,8 +341,10 @@ namespace FunTools
 			});
 		}
 
-		private const string EXPECTING_NOT_NULL_AWAITING_YIELDED = "Not expecting null of {0} to be yielded.";
-		private const string EXPECTING_NON_EMPTY_RESULT = "Expecting result of {0} but found Empty.";
+		internal static Cancelable NothingToCancel = () => { };
+
+		private static readonly string EXPECTING_NOTNULL_AWAITING_YIELDED = "Not expecting null of {0} to be yielded.";
+		private static readonly string EXPECTING_NONEMPTY_RESULT = "Expecting result of {0} but found Empty.";
 
 		#endregion
 	}

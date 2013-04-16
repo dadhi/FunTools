@@ -9,10 +9,10 @@ namespace FunTools.UnitTests
 		[Test]
 		public void Some_of_success_could_be_readly_composed()
 		{
-			var result = Some.Of(Success.Of(1));
+			var result = Value.Of(Success.Of(1));
 
-			Assert.AreEqual(true, result.IsSome);
-			Assert.AreEqual(true, result.Some.IsSuccess);
+			Assert.AreEqual(true, result.HasValue);
+			Assert.AreEqual(true, result.Value.IsSuccess);
 		}
 
 		[Test]
@@ -41,18 +41,18 @@ namespace FunTools.UnitTests
 		[Test]
 		public void Test_nested_map()
 		{
-			var result = Some.Of(Success.Of("hello, world"));
+			var result = Value.Of(Success.Of("hello, world"));
 			var words = result.Map(
 				x => x.Map(
 					s => s.Split(',')));
 
-			CollectionAssert.AreEqual(new[] { "hello", " world" }, words.Unwrap().Unwrap());
+			CollectionAssert.AreEqual(new[] { "hello", " world" }, words.ValueOrDefault().SuccessOrDefault());
 		}
 
 		[Test]
 		public void Test_nested_match()
 		{
-			var result = Some.Of(Success.Of("hello, world"));
+			var result = Value.Of(Success.Of("hello, world"));
 
 			var words = result.Match(
 				x => x.Match(
