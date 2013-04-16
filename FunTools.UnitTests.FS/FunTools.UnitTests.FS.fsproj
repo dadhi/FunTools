@@ -48,8 +48,15 @@
   <ItemGroup>
     <None Include="packages.config" />
     <Compile Include="FsUnitSample.fs" />
-    <Compile Include="ResultTests.fs" />
+    <Compile Include="NonBlockingDownloadAnyOfTwoSitesWithWebClient.fs" />
     <None Include="Test.fsx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FunTools\FunTools.csproj">
+      <Name>FunTools</Name>
+      <Project>{35675db6-c96f-4870-bcc8-600de69c6f68}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\FSharp\1.0\Microsoft.FSharp.Targets" Condition="!Exists('$(MSBuildBinPath)\Microsoft.Build.Tasks.v4.0.dll')" />
   <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets" Condition=" Exists('$(MSBuildBinPath)\Microsoft.Build.Tasks.v4.0.dll')" />
