@@ -24,27 +24,20 @@ namespace FunTools
 
 	public static class Await
 	{
-		public static Await<T> Try<T>(Func<T> action)
+		public static Await<T> WithInvoker<T>(Func<T> operation, Func<Action, Cancelable> invoker)
 		{
 			return complete =>
 			{
-				complete(Result.TryGet(action, Setup.LogFailure));
-				return NothingToCancel;
-			};
-		}
-
-		public static Await<T> WithInvoker<T>(Func<T> action, Func<Action, Cancelable> invoker)
-		{
-			return complete =>
-			{
-				var completer = new CompleteFirst();
-
-				var cancel = invoker(() => Try(action)(
-					result => completer.Do(() => complete(result))));
-
-				return () => completer.Do(() =>
+				var completeFirst = new CompleteFirst();
+				var cancel = invoker(() =>
 				{
-					cancel();
+					var result = Try.Get(operation);
+					completeFirst.Do(() => complete(result));
+				});
+
+				return () => completeFirst.Do(() =>
+				{
+					Try.Do(() => cancel());
 					complete(None.Of<Result<T>>());
 				});
 			};
@@ -60,7 +53,7 @@ namespace FunTools
 			return WithInvoker(action, Setup.UIInvoker);
 		}
 
-		public static Await<R> AnyOrDefault<T, R>(Func<Result<T>, int, Option<R>> chooseValue, R orDefault, params Await<T>[] sources)
+		public static Await<R> AnyOrDefault<T, R>(Func<Result<T>, int, Option<R>> choose, R @default, params Await<T>[] sources)
 		{
 			return complete =>
 			{
@@ -70,7 +63,7 @@ namespace FunTools
 
 				Complete<R> cancelRestAndComplete = result => completeFirst.Do(() =>
 				{
-					cancels.ForEach(x => x());
+					cancels.ForEach(x => Try.Do(() => x()));
 					complete(result);
 				});
 
@@ -82,7 +75,7 @@ namespace FunTools
 						if (result.IsNone) // It means that we ignoring external canceling.
 							return;
 
-						var choice = Result.TryGet(() => chooseValue(result.Value, index));
+						var choice = Try.Get(() => choose(result.Value, index));
 						if (choice.IsFailure)
 						{
 							cancelRestAndComplete(Failure.Of<R>(choice.Failure));
@@ -93,7 +86,7 @@ namespace FunTools
 						}
 						else // at last try to complete whole workflow with default result.
 						{
-							completeLast.Do(() => completeFirst.Do(() => complete(Success.Of(orDefault))));
+							completeLast.Do(() => completeFirst.Do(() => complete(Success.Of(@default))));
 						}
 					});
 
@@ -104,6 +97,65 @@ namespace FunTools
 				}
 
 				return () => cancelRestAndComplete(None.Of<Result<R>>());
+			};
+		}
+
+		public static Await<R> AnyOrDefault<T1, T2, R>(
+			Func<Option<Result<T1>>, Option<Result<T2>>, Option<R>> choose,
+			R @default,
+			Await<T1> source1,
+			Await<T2> source2)
+		{
+			return complete =>
+			{
+				var result1 = None.Of<Result<T1>>();
+				var result2 = None.Of<Result<T2>>();
+
+				var cancel1 = NothingToCancel;
+				var cancel2 = NothingToCancel;
+
+				var completeFirst = new CompleteFirst();
+				var completeDefault = new CompleteLast(2); // when both results are return but none of them chosen.
+
+				cancel1 = source1(x =>
+				{
+					var choice = choose(result1 = x, result2);
+					if (choice.IsNone)
+					{
+						completeDefault.Do(() => completeFirst.Do(() => complete(Success.Of(@default))));
+					}
+					else
+					{
+						if (result2.IsNone)  // let try to ignore another result
+							Try.Do(() => cancel2());
+
+						completeFirst.Do(() => complete(Success.Of(choice.Value)));
+					}
+				});
+
+				if (completeFirst.IsDone) // allow to quit earlier
+					return NothingToCancel;
+
+				cancel2 = source2(x =>
+				{
+					var choice = choose(result1, result2 = x);
+					if (choice.IsNone)
+					{
+						completeDefault.Do(() => completeFirst.Do(() => complete(Success.Of(@default))));
+					}
+					else
+					{
+						if (result1.IsNone) // let try to ignore another result
+							Try.Do(() => cancel1());
+						completeFirst.Do(() => complete(Success.Of(choice.Value)));
+					}
+				});
+
+				return (() =>
+				{
+					Try.Do(() => cancel1());
+					Try.Do(() => cancel2());
+				});
 			};
 		}
 
@@ -134,7 +186,7 @@ namespace FunTools
 				// Create helper action to safely invoke choose action and supply result to completed.
 				Func<Option<TEventArgs>, Complete<R>, bool> tryChooseAndComplete = (e, doComplete) =>
 				{
-					var choice = Result.TryGet(() => choose(e));
+					var choice = Try.Get(() => choose(e));
 					if (choice.IsSuccess && choice.Success.IsNone)
 						return false;
 
@@ -151,14 +203,14 @@ namespace FunTools
 				var completeFirst = new CompleteFirst();
 				Complete<R> completeAndUnsubscribe = x => completeFirst.Do(() =>
 				{
-					var unsubscription = Result.TryGet(() => unsubscribe(eventHandler));
+					var unsubscription = Try.Do(() => unsubscribe(eventHandler));
 
 					// Replacing original failure with unsubscription failure if got one.
 					complete(unsubscription.IsFailure ? Failure.Of<R>(unsubscription.Failure) : x);
 				});
 
 				// Convert action to event handler delegate (ignoring event source) and subscribe it.
-				var subscription = Result.TryGet(() => subscribe(
+				var subscription = Try.Do(() => subscribe(
 					eventHandler = convert((_, e) => tryChooseAndComplete(e, completeAndUnsubscribe))));
 
 				if (subscription.IsFailure)
@@ -296,7 +348,7 @@ namespace FunTools
 			if (completer.IsDone)
 				return NothingToCancel;
 
-			var movingNext = Result.TryGet(() =>
+			var movingNext = Try.Get(() =>
 			{
 				if (source.MoveNext())
 				{

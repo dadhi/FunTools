@@ -21,28 +21,6 @@ namespace FunTools
 
 	public static class Result
 	{
-		public static Result<T> TryGet<T>(Func<T> action, Action<Exception> onFailure = null)
-		{
-			try
-			{
-				return Success.Of(action());
-			}
-			catch (Exception ex)
-			{
-				if (onFailure != null) onFailure(ex);
-				return Failure.Of<T>(ex);
-			}
-		}
-
-		public static Result<Empty> TryGet(Action action, Action<Exception> onFailure = null)
-		{
-			return TryGet(() =>
-			{
-				action();
-				return Empty.Value;
-			});
-		}
-
 		public static R Match<T, R>(this Result<T> source, Func<T, R> matchSuccess, Func<Exception, R> matchFailure)
 		{
 			return source.IsSuccess ? matchSuccess(source.Success) : matchFailure(source.Failure);
@@ -80,6 +58,43 @@ namespace FunTools
 						null,
 						typeof(Exception).GetMethod("InternalPreserveStackTrace", BindingFlags.Instance | BindingFlags.NonPublic));
 			}
+		}
+	}
+
+	public static class Try
+	{
+		public static Result<T> Get<T>(Func<T> action, Action<Exception> onFailure = null)
+		{
+			try
+			{
+				return Success.Of(action());
+			}
+			catch (Exception ex)
+			{
+				(onFailure ?? Setup.OnFailure)(ex);
+				return Failure.Of<T>(ex);
+			}
+		}
+
+		public static Result<Empty> Do(Action action, Action<Exception> onFailure = null)
+		{
+			try
+			{
+				action();
+				return Empty.Value;
+			}
+			catch (Exception ex)
+			{
+				(onFailure ?? Setup.OnFailure)(ex);
+				return Failure.Of<Empty>(ex);
+			}
+		}
+
+		public static class Setup
+		{
+			public static Action<Exception> OnFailure = DoNothing;
+
+			public static void DoNothing(Exception ex) { }
 		}
 	}
 

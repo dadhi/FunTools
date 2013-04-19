@@ -38,3 +38,4 @@ let ``When one site download fails but another succeeds Then result should conta
             ).WaitResult().Value.Success
     
     result |> should contain "infoq"
+    !errors |> should haveLength 1
