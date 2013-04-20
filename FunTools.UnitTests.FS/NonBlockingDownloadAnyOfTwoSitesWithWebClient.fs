@@ -27,7 +27,7 @@ let downloadAsync uri =
 let ``When one site download fails but another succeeds Then result should contain another one`` () =
     let errors = ref []
     let result = 
-        Await.AnyOrDefault(
+        Await.Many(
             (fun (x : Result<_>) _ ->
                 if x.IsSuccess then Value.Of(x.Success) 
                 else

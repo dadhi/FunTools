@@ -33,7 +33,7 @@ namespace FunTools.UnitTests
 			var errors = new List<Exception>();
 
 			// Act
-			var result = Await.AnyOrDefault(
+			var result = Await.Many(
 				(x, _) =>
 				{
 					if (x.IsSuccess)
@@ -59,7 +59,7 @@ namespace FunTools.UnitTests
 			var errors = new List<Exception>();
 
 			// Act
-			var result = Await.AnyOrDefault(
+			var result = Await.Many(
 				(x, _) =>
 				{
 					if (x.IsSuccess)
@@ -85,7 +85,7 @@ namespace FunTools.UnitTests
 			var errors = new List<Exception>();
 
 			// Act
-			var result = Await.AnyOrDefault((x, _) =>
+			var result = Await.Many((x, _) =>
 				{
 					if (x.IsSuccess)
 						return x.Success;

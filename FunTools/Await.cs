@@ -31,7 +31,7 @@ namespace FunTools
 				var completeFirst = new CompleteFirst();
 				var cancel = invoker(() =>
 				{
-					var result = Try.Get(operation);
+					var result = Try.Do(operation);
 					completeFirst.Do(() => complete(result));
 				});
 
@@ -53,7 +53,7 @@ namespace FunTools
 			return WithInvoker(action, Setup.UIInvoker);
 		}
 
-		public static Await<R> AnyOrDefault<T, R>(Func<Result<T>, int, Option<R>> choose, R @default, params Await<T>[] sources)
+		public static Await<R> Many<T, R>(Func<Result<T>, int, Option<R>> choose, R @default, params Await<T>[] sources)
 		{
 			return complete =>
 			{
@@ -75,7 +75,7 @@ namespace FunTools
 						if (result.IsNone) // It means that we ignoring external canceling.
 							return;
 
-						var choice = Try.Get(() => choose(result.Value, index));
+						var choice = Try.Do(() => choose(result.Value, index));
 						if (choice.IsFailure)
 						{
 							cancelRestAndComplete(Failure.Of<R>(choice.Failure));
@@ -100,11 +100,11 @@ namespace FunTools
 			};
 		}
 
-		public static Await<R> AnyOrDefault<T1, T2, R>(
-			Func<Option<Result<T1>>, Option<Result<T2>>, Option<R>> choose,
-			R @default,
-			Await<T1> source1,
-			Await<T2> source2)
+		public static Await<R> Many<T1, T2, R>(
+			Await<T1> source1, 
+			Await<T2> source2, 
+			R @default, 
+			Func<Option<Result<T1>>, Option<Result<T2>>, Option<R>> choose)
 		{
 			return complete =>
 			{
@@ -162,7 +162,7 @@ namespace FunTools
 		public static Await<Result<T>[]> All<T>(params Await<T>[] sources)
 		{
 			var results = new Result<T>[sources.Length];
-			return AnyOrDefault(
+			return Many(
 				(x, i) => None.Of<Result<T>[]>().Of(() => results[i] = x),
 				results, sources);
 		}
@@ -170,7 +170,7 @@ namespace FunTools
 		public static Await<T> Any<T>(params Await<T>[] sources)
 		{
 			var ignored = default(T);
-			return AnyOrDefault(
+			return Many(
 				(x, i) => Value.Of(x.Success), // if success fails, then we are automatically propagating this error into result Await<T> 
 				ignored, sources);
 		}
@@ -186,7 +186,7 @@ namespace FunTools
 				// Create helper action to safely invoke choose action and supply result to completed.
 				Func<Option<TEventArgs>, Complete<R>, bool> tryChooseAndComplete = (e, doComplete) =>
 				{
-					var choice = Try.Get(() => choose(e));
+					var choice = Try.Do(() => choose(e));
 					if (choice.IsSuccess && choice.Success.IsNone)
 						return false;
 
@@ -238,7 +238,7 @@ namespace FunTools
 			return WithEvent(e => e.HasValue ? choose(e.Value) : None.Of<R>(), subscribe, unsubscribe, convert);
 		}
 
-		public static Option<Result<T>> WaitResult<T>(this Await<T> source, int timeoutMilliseconds = -1)
+		public static Option<Result<T>> WaitResult<T>(this Await<T> source, int timeoutMilliseconds = Timeout.Infinite)
 		{
 			var completed = new AutoResetEvent(false);
 
@@ -254,6 +254,11 @@ namespace FunTools
 
 			cancel();
 			return None.Of<Result<T>>();
+		}
+
+		public static T WaitSuccess<T>(this Await<T> source, int timeoutMilliseconds = Timeout.Infinite)
+		{
+			return source.WaitResult(timeoutMilliseconds).Value.Success;
 		}
 
 		public static class Setup
@@ -348,7 +353,7 @@ namespace FunTools
 			if (completer.IsDone)
 				return NothingToCancel;
 
-			var movingNext = Try.Get(() =>
+			var movingNext = Try.Do(() =>
 			{
 				if (source.MoveNext())
 				{

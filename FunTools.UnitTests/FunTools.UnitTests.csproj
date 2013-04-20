@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AwaitManyTests.cs" />
     <Compile Include="NonBlockingDownloadAnyOfTwoSitesWithWebClient.cs" />
     <Compile Include="Playground\FastGetPropertyInfoWithExprTree.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

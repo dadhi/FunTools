@@ -63,7 +63,7 @@ namespace FunTools
 
 	public static class Try
 	{
-		public static Result<T> Get<T>(Func<T> action, Action<Exception> onFailure = null)
+		public static Result<T> Do<T>(Func<T> action, Action<Exception> onFailure = null)
 		{
 			try
 			{
