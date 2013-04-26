@@ -489,10 +489,8 @@ namespace FunTools
 				return name;
 
 			var genericArgs = type.GetGenericArguments();
-			var genericArgsString = type.IsGenericTypeDefinition
-										? new string(',', genericArgs.Length - 1)
-										: String.Join(", ", genericArgs.Select(x => x.Display()).ToArray());
-
+			var genericArgsString = type.IsGenericTypeDefinition ? new string(',', genericArgs.Length - 1)
+				: string.Join(", ", genericArgs.Select(x => x.Display()).ToArray());
 			return name.Substring(0, name.LastIndexOf('`')) + "<" + genericArgsString + ">";
 		}
 

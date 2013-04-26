@@ -32,7 +32,8 @@ namespace FunTools.UnitTests
 				timer = new Timer(
 					_ =>
 					{
-						if (timer != null) timer.Dispose();
+						if (timer != null) 
+							timer.Dispose();
 						complete(Try.Do(operation));
 					},
 					null,
