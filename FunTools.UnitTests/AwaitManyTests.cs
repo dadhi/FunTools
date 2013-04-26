@@ -10,36 +10,25 @@ namespace FunTools.UnitTests
 		[Test]
 		public void Simple_joinad_test()
 		{
-			var joinad = Await.Many(
-				Timer(1000, () => true),
-				Timer(100, () => false),
+			var result = Await.Many(
+				Timer(1000),
+				Timer(100),
 				0,
 				(x, y) => Value.Of(
-					y.IsNone ? 1 :
-					x.IsNone ? 2 :
+					x.HasValue && y.IsNone ? 1 :
+					x.IsNone && y.HasValue ? 2 :
 					3)
-				);
+				).WaitSuccess();
 
-			var result = joinad.WaitSuccess();
 			Assert.AreEqual(2, result);
 		}
 
-		private static Await<T> Timer<T>(int milliseconds, Func<T> operation)
+		private static Await<Empty> Timer(int milliseconds)
 		{
-			return complete =>
+			return (Complete<Empty> complete) =>
 			{
-				Timer timer = null;
-				timer = new Timer(
-					_ =>
-					{
-						if (timer != null) 
-							timer.Dispose();
-						complete(Try.Do(operation));
-					},
-					null,
-					milliseconds,
-					Timeout.Infinite);
-
+				TimerCallback timerCallback = _ => complete(Success.Of(Empty.Value));
+				var timer = new Timer(timerCallback, null, milliseconds, Timeout.Infinite);
 				return timer.Dispose;
 			};
 		}

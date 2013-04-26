@@ -348,7 +348,7 @@ namespace FunTools
 
 		#region Implementation
 
-		private static Cancelable DoAwait<T>(IEnumerator<Awaiting<T>> source, Complete<T> completed, CompleteFirst completer)
+		private static Cancelable DoAwait<T>(IEnumerator<Awaiting<T>> source, Complete<T> complete, CompleteFirst completer)
 		{
 			if (completer.IsDone)
 				return NothingToCancel;
@@ -370,31 +370,31 @@ namespace FunTools
 
 			if (movingNext.IsFailure)
 			{
-				completer.Do(() => completed(Failure.Of<T>(movingNext.Failure)));
+				completer.Do(() => complete(Failure.Of<T>(movingNext.Failure)));
 				return NothingToCancel;
 			}
 
 			if (movingNext.Success.IsNone)
 			{
-				completer.Do(() => completed(Success.Of((T)(object)Empty.Value)));
+				completer.Do(() => complete(Success.Of((T)(object)Empty.Value)));
 				return NothingToCancel;
 			}
 
 			var currentAwaiting = movingNext.Success.Value;
 			if (currentAwaiting.IsCompleted)
 			{
-				completer.Do(() => completed(Success.Of(currentAwaiting.Result)));
+				completer.Do(() => complete(Success.Of(currentAwaiting.Result)));
 				return NothingToCancel;
 			}
 
 			Cancelable cancelNext = null;
 			var cancelCurrent = currentAwaiting.Proceed(
-				_ => cancelNext = DoAwait(source, completed, completer));
+				_ => cancelNext = DoAwait(source, complete, completer));
 
 			return () => completer.Do(() =>
 			{
 				(cancelNext ?? cancelCurrent)();
-				completed(None.Of<Result<T>>());
+				complete(None.Of<Result<T>>());
 			});
 		}
 
