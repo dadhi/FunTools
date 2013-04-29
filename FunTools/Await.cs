@@ -53,7 +53,35 @@ namespace FunTools
 			return WithInvoker(action, Setup.UIInvoker);
 		}
 
-		public static Await<R> Many<T, R>(Func<Result<T>, int, Option<R>> choose, R @default, params Await<T>[] sources)
+		public static Await<R> Map<T, R>(this Await<T> source, Func<T, R> map)
+		{
+			return complete => source(result =>
+			{
+				if (result.IsNone)
+					complete(None.Of<Result<R>>());
+				else if (result.Value.IsFailure)
+					complete(Failure.Of<R>(result.Value.Failure));
+				else
+				{
+					var converted = Try.Do(() => map(result.Value.Success));
+					complete(converted.IsSuccess ? Success.Of(converted.Success) : Failure.Of<R>(converted.Failure));
+				}
+			});
+		}
+
+		public static Await<Empty> Out<T>(this Await<T> source, Action<T> takeOut)
+		{
+			return source.Map(result =>
+			{
+				takeOut(result);
+				return Empty.Value;
+			});
+		}
+
+		public static Await<R> Many<T, R>(
+			Func<Result<T>, int, Option<R>> choose,
+			R @default, 
+			params Await<T>[] sources)
 		{
 			return complete =>
 			{
@@ -72,7 +100,7 @@ namespace FunTools
 					var index = i; // save index to use in lambda
 					var current = sources[i](result =>
 					{
-						if (result.IsNone) // It means that we ignoring external canceling.
+						if (result.IsNone) // it means that we ignoring external canceling.
 							return;
 
 						var choice = Try.Do(() => choose(result.Value, index));
@@ -101,62 +129,18 @@ namespace FunTools
 		}
 
 		public static Await<R> Many<T1, T2, R>(
-			Await<T1> source1, 
-			Await<T2> source2, 
-			R @default, 
+			Await<T1> source1,
+			Await<T2> source2,
+			R @default,
 			Func<Option<Result<T1>>, Option<Result<T2>>, Option<R>> choose)
 		{
-			return complete =>
-			{
-				var result1 = None.Of<Result<T1>>();
-				var result2 = None.Of<Result<T2>>();
-
-				var cancel1 = NothingToCancel;
-				var cancel2 = NothingToCancel;
-
-				var completeFirst = new CompleteFirst();
-				var completeDefault = new CompleteLast(2); // when both results are return but none of them chosen.
-
-				cancel1 = source1(x =>
-				{
-					var choice = choose(result1 = x, result2);
-					if (choice.IsNone)
-					{
-						completeDefault.Do(() => completeFirst.Do(() => complete(Success.Of(@default))));
-					}
-					else
-					{
-						if (result2.IsNone)  // let try to ignore another result
-							Try.Do(() => cancel2());
-
-						completeFirst.Do(() => complete(Success.Of(choice.Value)));
-					}
-				});
-
-				if (completeFirst.IsDone) // allow to quit earlier
-					return NothingToCancel;
-
-				cancel2 = source2(x =>
-				{
-					var choice = choose(result1, result2 = x);
-					if (choice.IsNone)
-					{
-						completeDefault.Do(() => completeFirst.Do(() => complete(Success.Of(@default))));
-					}
-					else
-					{
-						if (result1.IsNone) // let try to ignore another result
-							Try.Do(() => cancel1());
-						completeFirst.Do(() => complete(Success.Of(choice.Value)));
-					}
-				});
-
-				return (() =>
-				{
-					Try.Do(() => cancel1());
-					Try.Do(() => cancel2());
-				});
-			};
+			var result1 = None.Of<Result<T1>>();
+			var result2 = None.Of<Result<T2>>();
+			return Many(
+				(_, i) => choose(result1, result2),
+				@default,
+				source1.Out(result => result1 = Success.Of(result)),
+				source2.Out(result => result2 = Success.Of(result)));
 		}
 
 		public static Await<Result<T>[]> All<T>(params Await<T>[] sources)

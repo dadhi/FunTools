@@ -176,5 +176,11 @@ namespace FunTools
 	public sealed class Empty
 	{
 		public static readonly Empty Value = new Empty();
+
+		public static Empty Do(Action action)
+		{
+			action();
+			return Value;
+		}
 	}
 }
