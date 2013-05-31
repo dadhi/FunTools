@@ -14,7 +14,7 @@ let downloadAsync uri =
             Await.Event<DownloadDataCompletedEventArgs, DownloadDataCompletedEventHandler, string>(
                 (fun e ->
                     if e.Error <> null then e.Error.ReThrow()
-                    Value.Of(Text.Encoding.ASCII.GetString e.Result)),
+                    Some.Of(Text.Encoding.ASCII.GetString e.Result)),
                 (fun h -> webClient.DownloadDataCompleted.AddHandler(h)),
                 (fun h -> webClient.DownloadDataCompleted.RemoveHandler(h)),
                 (fun a -> DownloadDataCompletedEventHandler(fun o e -> a.Invoke(o, e))))
@@ -29,13 +29,13 @@ let ``When one site download fails but another succeeds Then result should conta
     let result = 
         Await.Many(
             (fun (x : Result<_>) _ ->
-                if x.IsSuccess then Value.Of(x.Success) 
+                if x.IsSuccess then Some.Of(x.Success) 
                 else
                     errors := x.Failure :: !errors
                     None.Of<string>()),
             null,
             [|"http://гыгы.com"; "http://www.infoq.com"|] |> Array.map downloadAsync
-            ).WaitResult().Value.Success
+            ).WaitResult().SomeValue.Success
     
     result |> should contain "infoq"
     !errors |> should haveLength 1

@@ -9,10 +9,10 @@ namespace FunTools.UnitTests
 		[Test]
 		public void Some_of_success_could_be_readly_composed()
 		{
-			var result = Value.Of(Success.Of(1));
+			var result = Some.Of(Success.Of(1));
 
-			Assert.AreEqual(true, result.HasValue);
-			Assert.AreEqual(true, result.Value.IsSuccess);
+			Assert.AreEqual(true, result.IsSomeValue);
+			Assert.AreEqual(true, result.SomeValue.IsSuccess);
 		}
 
 		[Test]
@@ -41,18 +41,18 @@ namespace FunTools.UnitTests
 		[Test]
 		public void Test_nested_map()
 		{
-			var result = Value.Of(Success.Of("hello, world"));
+			var result = Some.Of(Success.Of("hello, world"));
 			var words = result.Map(
 				x => x.Map(
 					s => s.Split(',')));
 
-			CollectionAssert.AreEqual(new[] { "hello", " world" }, words.ValueOrDefault().SuccessOrDefault());
+			CollectionAssert.AreEqual(new[] { "hello", " world" }, words.SomeValueOrDefault().SuccessOrDefault());
 		}
 
 		[Test]
 		public void Test_nested_match()
 		{
-			var result = Value.Of(Success.Of("hello, world"));
+			var result = Some.Of(Success.Of("hello, world"));
 
 			var words = result.Match(
 				x => x.Match(
@@ -61,6 +61,17 @@ namespace FunTools.UnitTests
 				() => new string[0]);
 
 			CollectionAssert.AreEqual(new[] { "hello", " world" }, words);
+		}
+
+		[Test]
+		public void Test_convert_Result_to_some_other_type()
+		{
+			// Arrange
+			var result = Success.Of(1).To(Some.Of, None.Of<int>);
+
+			// Act
+			// Assert
+			Assert.AreEqual(1, result.SomeValue);
 		}
 	}
 }

@@ -59,11 +59,11 @@ namespace FunTools
 			{
 				if (result.IsNone)
 					complete(None.Of<Result<R>>());
-				else if (result.Value.IsFailure)
-					complete(Failure.Of<R>(result.Value.Failure));
+				else if (result.SomeValue.IsFailure)
+					complete(Failure.Of<R>(result.SomeValue.Failure));
 				else
 				{
-					var converted = Try.Do(() => map(result.Value.Success));
+					var converted = Try.Do(() => map(result.SomeValue.Success));
 					complete(converted.IsSuccess ? Success.Of(converted.Success) : Failure.Of<R>(converted.Failure));
 				}
 			});
@@ -103,14 +103,14 @@ namespace FunTools
 						if (result.IsNone) // it means that we ignoring external canceling.
 							return;
 
-						var choice = Try.Do(() => choose(result.Value, index));
+						var choice = Try.Do(() => choose(result.SomeValue, index));
 						if (choice.IsFailure)
 						{
 							cancelRestAndComplete(Failure.Of<R>(choice.Failure));
 						}
-						else if (choice.Success.HasValue)
+						else if (choice.Success.IsSomeValue)
 						{
-							cancelRestAndComplete(Success.Of(choice.Success.Value));
+							cancelRestAndComplete(Success.Of(choice.Success.SomeValue));
 						}
 						else // at last try to complete whole workflow with default result.
 						{
@@ -155,7 +155,7 @@ namespace FunTools
 		{
 			var ignored = default(T);
 			return Many(
-				(x, i) => Value.Of(x.Success), // if success fails, then we are automatically propagating this error into result Await<T> 
+				(x, i) => Some.Of(x.Success), // if success fails, then we are automatically propagating this error into result Await<T> 
 				ignored, sources);
 		}
 
@@ -174,7 +174,7 @@ namespace FunTools
 					if (choice.IsSuccess && choice.Success.IsNone)
 						return false;
 
-					doComplete(choice.Map(x => x.Value));
+					doComplete(choice.Map(x => x.SomeValue));
 					return true;
 				};
 
@@ -219,7 +219,7 @@ namespace FunTools
 			Action<TEventHandler> unsubscribe,
 			Func<Action<object, TEventArgs>, TEventHandler> convert)
 		{
-			return WithEvent(e => e.HasValue ? choose(e.Value) : None.Of<R>(), subscribe, unsubscribe, convert);
+			return WithEvent(e => e.IsSomeValue ? choose(e.SomeValue) : None.Of<R>(), subscribe, unsubscribe, convert);
 		}
 
 		public static Option<Result<T>> WaitResult<T>(this Await<T> source, int timeoutMilliseconds = Timeout.Infinite)
@@ -242,7 +242,7 @@ namespace FunTools
 
 		public static T WaitSuccess<T>(this Await<T> source, int timeoutMilliseconds = Timeout.Infinite)
 		{
-			return source.WaitResult(timeoutMilliseconds).Value.Success;
+			return source.WaitResult(timeoutMilliseconds).SomeValue.Success;
 		}
 
 		public static class Setup
@@ -364,7 +364,7 @@ namespace FunTools
 				return NothingToCancel;
 			}
 
-			var currentAwaiting = movingNext.Success.Value;
+			var currentAwaiting = movingNext.Success.SomeValue;
 			if (currentAwaiting.IsCompleted)
 			{
 				completer.Do(() => complete(Success.Of(currentAwaiting.Result)));

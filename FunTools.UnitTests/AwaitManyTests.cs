@@ -13,9 +13,9 @@ namespace FunTools.UnitTests
 				Timer(1000),
 				Timer(100),
 				0,
-				(x, y) => Value.Of(
-					x.HasValue && y.IsNone ? 1 :
-					x.IsNone && y.HasValue ? 2 :
+				(x, y) => Some.Of(
+					x.IsSomeValue && y.IsNone ? 1 :
+					x.IsNone && y.IsSomeValue ? 2 :
 					3)
 				).WaitSuccess();
 

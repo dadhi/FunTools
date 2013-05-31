@@ -26,6 +26,11 @@ namespace FunTools
 			return source.IsSuccess ? matchSuccess(source.Success) : matchFailure(source.Failure);
 		}
 
+		public static R To<T, R>(this Result<T> source, Func<T, R> convertSuccess, Func<Exception, R> convertFailure)
+		{
+			return source.IsSuccess ? convertSuccess(source.Success) : convertFailure(source.Failure);
+		}
+
 		public static Result<R> Map<T, R>(this Result<T> source, Func<T, R> map)
 		{
 			return source.Match(x => Success.Of(map(x)), Failure.Of<R>);
