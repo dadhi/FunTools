@@ -37,6 +37,18 @@ namespace FunTools
 			return source.To(x => Success.Of(map(x)), Failure.Of<R>);
 		}
 
+		public static Result<T> OnSuccess<T>(this Result<T> source, Action<T> action)
+		{
+			if (source.IsSuccess) action(source.Success);
+			return source;
+		}
+
+		public static Result<T> OnFailure<T>(this Result<T> source, Action<Exception> action)
+		{
+			if (source.IsFailure) action(source.Failure);
+			return source;
+		}
+
 		public static T SuccessOrDefault<T>(this Result<T> source, T defaultValue = default(T))
 		{
 			return source.IsSuccess ? source.Success : defaultValue;

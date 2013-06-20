@@ -91,7 +91,7 @@ namespace FunTools
 
 				Complete<R> cancelRestAndComplete = result => completeFirst.Do(() =>
 				{
-					cancels.ForEach(x => Try.Do(() => x()));
+					cancels.Each(x => Try.Do(() => x()));
 					complete(result);
 				});
 
@@ -128,6 +128,14 @@ namespace FunTools
 			};
 		}
 
+		public static Await<R> AwaitSome<T, R>(
+			this IEnumerable<Await<T>> sources,
+			Func<Result<T>, int, Option<R>> choose,
+			R defaultResult = default(R))
+		{
+			return Many(choose, defaultResult, sources.ToArray());
+		}
+
 		public static Await<R> Many<T1, T2, R>(
 			Await<T1> source1,
 			Await<T2> source2,
@@ -146,9 +154,7 @@ namespace FunTools
 		public static Await<Result<T>[]> All<T>(params Await<T>[] sources)
 		{
 			var results = new Result<T>[sources.Length];
-			return Many(
-				(x, i) => None.Of<Result<T>[]>().Of(() => results[i] = x),
-				results, sources);
+			return Many((x, i) => None.Of<Result<T>[]>().Of(() => results[i] = x), results, sources);
 		}
 
 		public static Await<T> Any<T>(params Await<T>[] sources)
@@ -493,14 +499,14 @@ namespace FunTools
 			return string.Format(format, args.Select(x => x is Type ? ((Type)x).Display() : x).ToArray());
 		}
 
-		public static void ForEach<T>(this IList<T> source, Action<T> action)
+		public static void Each<T>(this IList<T> source, Action<T> action)
 		{
 			var count = source.Count;
 			for (var i = 0; i < count; i++)
 				action(source[i]);
 		}
 
-		public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
+		public static void Each<T>(this IEnumerable<T> source, Action<T> action)
 		{
 			foreach (var x in source)
 				action(x);

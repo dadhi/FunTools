@@ -42,9 +42,7 @@ namespace FunTools.UnitTests
 		public void Test_nested_map()
 		{
 			var result = Some.Of(Success.Of("hello, world"));
-			var words = result.Map(
-				x => x.Map(
-					s => s.Split(',')));
+			var words = result.Map(x => x.Map(s => s.Split(',')));
 
 			CollectionAssert.AreEqual(new[] { "hello", " world" }, words.SomeOrDefault().SuccessOrDefault());
 		}
@@ -54,11 +52,7 @@ namespace FunTools.UnitTests
 		{
 			var result = Some.Of(Success.Of("hello, world"));
 
-			var words = result.To(
-				x => x.To(
-					s => s.Split(','),
-					_ => new string[0]),
-				() => new string[0]);
+			var words = result.To(x => x.To(s => s.Split(','), _ => new string[0]), () => new string[0]);
 
 			CollectionAssert.AreEqual(new[] { "hello", " world" }, words);
 		}

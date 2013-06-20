@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -16,13 +17,14 @@ namespace FunTools.UnitTests
 		{
 			// Arrange
 			// Act
-			var result = Await.Any(
-				DownloadAsync("http://www.google.com"),
-				DownloadAsync("http://www.infoq.com"))
-				.WaitSuccess();
+			var urls = new[] {"http://www.google.com", "http://www.infoq.com"};
 
+			var success = urls.Select(DownloadAsync)
+			    .AwaitSome((x, _) => Some.Of(x.Success))
+				.WaitSuccess();
+			
 			// Assert
-			(result.Contains("google") || result.Contains("infoq")).Should().BeTrue();
+			(success.Contains("google") || success.Contains("infoq")).Should().BeTrue();
 		}
 
 		[Test]
@@ -34,14 +36,7 @@ namespace FunTools.UnitTests
 
 			// Act
 			var result = Await.Many(
-				(x, _) =>
-				{
-					if (x.IsSuccess)
-						return x.Success;
-
-					errors.Add(x.Failure);
-					return None.Of<string>();
-				},
+				(x, _) => x.OnFailure(errors.Add).To(Some.Of, ex => None.Of<string>()),
 				null,
 				DownloadAsync("http://www.google.com"),
 				DownloadAsync("http://www.infoq.com"))
@@ -58,16 +53,9 @@ namespace FunTools.UnitTests
 			// Arrange
 			var errors = new List<Exception>();
 
-			// Act
+			// Act;
 			var result = Await.Many(
-				(x, _) =>
-				{
-					if (x.IsSuccess)
-						return x.Success;
-
-					errors.Add(x.Failure);
-					return None.Of<string>();
-				},
+				(x, _) => x.OnFailure(errors.Add).To(Some.Of, ex => None.Of<string>()),
 				null,
 				DownloadAsync("http://דûדû.com"),
 				DownloadAsync("http://www.infoq.com"))
@@ -85,14 +73,8 @@ namespace FunTools.UnitTests
 			var errors = new List<Exception>();
 
 			// Act
-			var result = Await.Many((x, _) =>
-				{
-					if (x.IsSuccess)
-						return x.Success;
-
-					errors.Add(x.Failure);
-					return None.Of<string>();
-				},
+			var result = Await.Many(
+				(x, _) => x.OnFailure(errors.Add).To(Some.Of, ex => None.Of<string>()),
 				null,
 				DownloadAsync("http://דûדû.com"),
 				DownloadAsync("http://ץוץו.com"))
