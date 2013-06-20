@@ -16,28 +16,29 @@ namespace FunTools
 		{
 			return Option<T>.None;
 		}
-
-		public static Option<T> Of<T>(object ignored)
-		{
-			return Option<T>.None;
-		}
 	}
 
 	public static class Option
 	{
-		public static R Match<T, R>(this Option<T> source, Func<T, R> matchValue, Func<R> matchNone)
+		public static R To<T, R>(this Option<T> source, Func<T, R> onSome, Func<R> onNone)
 		{
-			return source.IsSomeValue ? matchValue(source.SomeValue) : matchNone();
+			return source.IsSome ? onSome(source.Some) : onNone();
+		}
+
+		public static void Do<T>(this Option<T> source, Action<T> onSome, Action onNone = null)
+		{
+			if (source.IsSome) onSome(source.Some);
+			else if (onNone != null) onNone();
 		}
 
 		public static Option<R> Map<T, R>(this Option<T> source, Func<T, R> map)
 		{
-			return source.Match(x => Some.Of(map(x)), None.Of<R>);
+			return source.To(x => Some.Of(map(x)), None.Of<R>);
 		}
 
-		public static T SomeValueOrDefault<T>(this Option<T> source, T orDefault = default(T))
+		public static T SomeOrDefault<T>(this Option<T> source, T orDefault = default(T))
 		{
-			return source.IsSomeValue ? source.SomeValue : orDefault;
+			return source.IsSome ? source.Some : orDefault;
 		}
 	}
 
@@ -50,7 +51,7 @@ namespace FunTools
 
 		public readonly static Option<T> None = new Option<T>();
 
-		public T SomeValue
+		public T Some
 		{
 			get
 			{
@@ -60,48 +61,48 @@ namespace FunTools
 			}
 		}
 
-		public bool IsSomeValue
+		public bool IsSome
 		{
-			get { return _isSomeValue; }
+			get { return _isSome; }
 		}
 
 		public bool IsNone
 		{
-			get { return !_isSomeValue; }
+			get { return !_isSome; }
 		}
 
 		public override string ToString()
 		{
-			return IsSomeValue
-				? "Some<" + typeof(T).Name + ">(" + SomeValue + ")"
+			return IsSome
+				? "Some<" + typeof(T).Name + ">(" + Some + ")"
 				: "None<" + typeof(T).Name + ">()";
 		}
 
 		public override bool Equals(object obj)
 		{
 			return (obj is Option<T>) &&
-				(((Option<T>)obj).IsSomeValue 
-					? IsSomeValue && Equals(((Option<T>)obj).SomeValue, SomeValue)
+				(((Option<T>)obj).IsSome 
+					? IsSome && Equals(((Option<T>)obj).Some, Some)
 					: IsNone);
 		}
 
 		public override int GetHashCode()
 		{
-			return IsSomeValue ? SomeValue.GetHashCode() : 0;
+			return IsSome ? Some.GetHashCode() : 0;
 		}
 
 		#region Implementation
 
 		private readonly T _value;
 
-		private readonly bool _isSomeValue;
+		private readonly bool _isSome;
 
 		internal Option(T value)
 		{
 			if (value == null)
 				throw new ArgumentNullException("value");
 			_value = value;
-			_isSomeValue = true;
+			_isSome = true;
 		}
 
 		internal Option()

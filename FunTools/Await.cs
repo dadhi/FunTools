@@ -12,9 +12,9 @@ namespace FunTools
 	// Await.WithEvent("click", x => x > 0).Do()
 	// Await.UI(..).Do(..)
 	// Await.Try(..).Do(..)
-	// Await.All(Await.Async(..), Await.Event(..), Await.Try())
-	// Await.Any(Await.Async(..), Await.Event(..), Await.Try())
-	// Await.Async(..).Return()
+	// Await.All(Await.Async(..), Await.Event(..))
+	// Await.Any(Await.Async(..), Await.Event(..))
+	// Await.Async(..).Wait()
 
 	public delegate Cancelable Await<T>(Complete<T> complete);
 
@@ -24,7 +24,7 @@ namespace FunTools
 
 	public static class Await
 	{
-		public static Await<T> WithInvoker<T>(Func<T> operation, Func<Action, Cancelable> invoker)
+		public static Await<T> Operation<T>(Func<T> operation, Func<Action, Cancelable> invoker)
 		{
 			return complete =>
 			{
@@ -45,12 +45,12 @@ namespace FunTools
 
 		public static Await<T> Async<T>(Func<T> action)
 		{
-			return WithInvoker(action, Setup.AsyncInvoker);
+			return Operation(action, Setup.AsyncInvoker);
 		}
 
 		public static Await<T> UI<T>(Func<T> action)
 		{
-			return WithInvoker(action, Setup.UIInvoker);
+			return Operation(action, Setup.UIInvoker);
 		}
 
 		public static Await<R> Map<T, R>(this Await<T> source, Func<T, R> map)
@@ -59,28 +59,28 @@ namespace FunTools
 			{
 				if (result.IsNone)
 					complete(None.Of<Result<R>>());
-				else if (result.SomeValue.IsFailure)
-					complete(Failure.Of<R>(result.SomeValue.Failure));
+				else if (result.Some.IsFailure)
+					complete(Failure.Of<R>(result.Some.Failure));
 				else
 				{
-					var converted = Try.Do(() => map(result.SomeValue.Success));
+					var converted = Try.Do(() => map(result.Some.Success));
 					complete(converted.IsSuccess ? Success.Of(converted.Success) : Failure.Of<R>(converted.Failure));
 				}
 			});
 		}
 
-		public static Await<Empty> Out<T>(this Await<T> source, Action<T> takeOut)
+		public static Await<Empty> Take<T>(this Await<T> source, Action<T> take)
 		{
 			return source.Map(result =>
 			{
-				takeOut(result);
+				take(result);
 				return Empty.Value;
 			});
 		}
 
 		public static Await<R> Many<T, R>(
 			Func<Result<T>, int, Option<R>> choose,
-			R @default, 
+			R defaultResult,
 			params Await<T>[] sources)
 		{
 			return complete =>
@@ -103,18 +103,18 @@ namespace FunTools
 						if (result.IsNone) // it means that we ignoring external canceling.
 							return;
 
-						var choice = Try.Do(() => choose(result.SomeValue, index));
+						var choice = Try.Do(() => choose(result.Some, index));
 						if (choice.IsFailure)
 						{
 							cancelRestAndComplete(Failure.Of<R>(choice.Failure));
 						}
-						else if (choice.Success.IsSomeValue)
+						else if (choice.Success.IsSome)
 						{
-							cancelRestAndComplete(Success.Of(choice.Success.SomeValue));
+							cancelRestAndComplete(Success.Of(choice.Success.Some));
 						}
 						else // at last try to complete whole workflow with default result.
 						{
-							completeLast.Do(() => completeFirst.Do(() => complete(Success.Of(@default))));
+							completeLast.Do(() => completeFirst.Do(() => complete(Success.Of(defaultResult))));
 						}
 					});
 
@@ -131,16 +131,16 @@ namespace FunTools
 		public static Await<R> Many<T1, T2, R>(
 			Await<T1> source1,
 			Await<T2> source2,
-			R @default,
+			R defaultResult,
 			Func<Option<Result<T1>>, Option<Result<T2>>, Option<R>> choose)
 		{
 			var result1 = None.Of<Result<T1>>();
 			var result2 = None.Of<Result<T2>>();
 			return Many(
 				(_, i) => choose(result1, result2),
-				@default,
-				source1.Out(result => result1 = Success.Of(result)),
-				source2.Out(result => result2 = Success.Of(result)));
+				defaultResult,
+				source1.Take(result => result1 = Success.Of(result)),
+				source2.Take(result => result2 = Success.Of(result)));
 		}
 
 		public static Await<Result<T>[]> All<T>(params Await<T>[] sources)
@@ -159,7 +159,7 @@ namespace FunTools
 				ignored, sources);
 		}
 
-		public static Await<R> WithEvent<TEventArgs, TEventHandler, R>(
+		public static Await<R> Condition<TEventArgs, TEventHandler, R>(
 			Func<Option<TEventArgs>, Option<R>> choose,
 			Action<TEventHandler> subscribe,
 			Action<TEventHandler> unsubscribe,
@@ -174,7 +174,7 @@ namespace FunTools
 					if (choice.IsSuccess && choice.Success.IsNone)
 						return false;
 
-					doComplete(choice.Map(x => x.SomeValue));
+					doComplete(choice.Map(x => x.Some));
 					return true;
 				};
 
@@ -219,10 +219,20 @@ namespace FunTools
 			Action<TEventHandler> unsubscribe,
 			Func<Action<object, TEventArgs>, TEventHandler> convert)
 		{
-			return WithEvent(e => e.IsSomeValue ? choose(e.SomeValue) : None.Of<R>(), subscribe, unsubscribe, convert);
+			return Condition(e => e.IsSome ? choose(e.Some) : None.Of<R>(), subscribe, unsubscribe, convert);
 		}
 
-		public static Option<Result<T>> WaitResult<T>(this Await<T> source, int timeoutMilliseconds = Timeout.Infinite)
+		public static Cancelable Do<T>(
+			this Await<T> source,
+			Action<T> onSuccess = null,
+			Action<Exception> onFailure = null,
+			Action onCancel = null,
+			Action<Result<T>> onResult = null)
+		{
+			return source(x => x.Do(onResult ?? (result => result.Do(onSuccess, onFailure)), onCancel));
+		}
+
+		public static Option<Result<T>> Wait<T>(this Await<T> source, int timeoutMilliseconds = Timeout.Infinite)
 		{
 			var completed = new AutoResetEvent(false);
 
@@ -242,7 +252,7 @@ namespace FunTools
 
 		public static T WaitSuccess<T>(this Await<T> source, int timeoutMilliseconds = Timeout.Infinite)
 		{
-			return source.WaitResult(timeoutMilliseconds).SomeValue.Success;
+			return source.Wait(timeoutMilliseconds).Some.Success;
 		}
 
 		public static class Setup
@@ -364,7 +374,7 @@ namespace FunTools
 				return NothingToCancel;
 			}
 
-			var currentAwaiting = movingNext.Success.SomeValue;
+			var currentAwaiting = movingNext.Success.Some;
 			if (currentAwaiting.IsCompleted)
 			{
 				completer.Do(() => complete(Success.Of(currentAwaiting.Result)));

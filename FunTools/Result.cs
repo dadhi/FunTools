@@ -21,24 +21,25 @@ namespace FunTools
 
 	public static class Result
 	{
-		public static R Match<T, R>(this Result<T> source, Func<T, R> matchSuccess, Func<Exception, R> matchFailure)
+		public static R To<T, R>(this Result<T> source, Func<T, R> onSuccess, Func<Exception, R> onFailure)
 		{
-			return source.IsSuccess ? matchSuccess(source.Success) : matchFailure(source.Failure);
+			return source.IsSuccess ? onSuccess(source.Success) : onFailure(source.Failure);
 		}
 
-		public static R To<T, R>(this Result<T> source, Func<T, R> convertSuccess, Func<Exception, R> convertFailure)
+		public static void Do<T>(this Result<T> source, Action<T> onSuccess, Action<Exception> onFailure = null)
 		{
-			return source.IsSuccess ? convertSuccess(source.Success) : convertFailure(source.Failure);
+			if (source.IsSuccess) onSuccess(source.Success);
+			else if (onFailure != null) onFailure(source.Failure);
 		}
 
 		public static Result<R> Map<T, R>(this Result<T> source, Func<T, R> map)
 		{
-			return source.Match(x => Success.Of(map(x)), Failure.Of<R>);
+			return source.To(x => Success.Of(map(x)), Failure.Of<R>);
 		}
 
-		public static T SuccessOrDefault<T>(this Result<T> source, T orDefault = default(T))
+		public static T SuccessOrDefault<T>(this Result<T> source, T defaultValue = default(T))
 		{
-			return source.IsSuccess ? source.Success : orDefault;
+			return source.IsSuccess ? source.Success : defaultValue;
 		}
 
 		/// <summary>

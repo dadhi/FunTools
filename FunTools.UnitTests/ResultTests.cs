@@ -11,8 +11,8 @@ namespace FunTools.UnitTests
 		{
 			var result = Some.Of(Success.Of(1));
 
-			Assert.AreEqual(true, result.IsSomeValue);
-			Assert.AreEqual(true, result.SomeValue.IsSuccess);
+			Assert.AreEqual(true, result.IsSome);
+			Assert.AreEqual(true, result.Some.IsSuccess);
 		}
 
 		[Test]
@@ -46,7 +46,7 @@ namespace FunTools.UnitTests
 				x => x.Map(
 					s => s.Split(',')));
 
-			CollectionAssert.AreEqual(new[] { "hello", " world" }, words.SomeValueOrDefault().SuccessOrDefault());
+			CollectionAssert.AreEqual(new[] { "hello", " world" }, words.SomeOrDefault().SuccessOrDefault());
 		}
 
 		[Test]
@@ -54,8 +54,8 @@ namespace FunTools.UnitTests
 		{
 			var result = Some.Of(Success.Of("hello, world"));
 
-			var words = result.Match(
-				x => x.Match(
+			var words = result.To(
+				x => x.To(
 					s => s.Split(','),
 					_ => new string[0]),
 				() => new string[0]);
@@ -67,11 +67,11 @@ namespace FunTools.UnitTests
 		public void Test_convert_Result_to_some_other_type()
 		{
 			// Arrange
-			var result = Success.Of(1).To(Some.Of, None.Of<int>);
+			var result = Success.Of(1).To(Some.Of, exIngnored => None.Of<int>());
 
 			// Act
 			// Assert
-			Assert.AreEqual(1, result.SomeValue);
+			Assert.AreEqual(1, result.Some);
 		}
 	}
 }

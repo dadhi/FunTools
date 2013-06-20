@@ -19,7 +19,7 @@ namespace FunTools.UnitTests
 			var result = Await.Any(
 				DownloadAsync("http://www.google.com"),
 				DownloadAsync("http://www.infoq.com"))
-				.WaitResult().SomeValue.Success;
+				.WaitSuccess();
 
 			// Assert
 			(result.Contains("google") || result.Contains("infoq")).Should().BeTrue();
@@ -45,7 +45,7 @@ namespace FunTools.UnitTests
 				null,
 				DownloadAsync("http://www.google.com"),
 				DownloadAsync("http://www.infoq.com"))
-				.WaitResult().SomeValue.Success;
+				.WaitSuccess();
 
 			// Assert
 			(result.Contains("google") || result.Contains("infoq")).Should().BeTrue();
@@ -71,7 +71,7 @@ namespace FunTools.UnitTests
 				null,
 				DownloadAsync("http://דûדû.com"),
 				DownloadAsync("http://www.infoq.com"))
-				.WaitResult().SomeValue.Success;
+				.WaitSuccess();
 
 			// Assert
 			result.Contains("infoq").Should().BeTrue();
@@ -96,7 +96,7 @@ namespace FunTools.UnitTests
 				null,
 				DownloadAsync("http://דûדû.com"),
 				DownloadAsync("http://ץוץו.com"))
-				.WaitResult().SomeValue.Success;
+				.WaitSuccess();
 
 			// Assert
 			result.Should().BeNull();

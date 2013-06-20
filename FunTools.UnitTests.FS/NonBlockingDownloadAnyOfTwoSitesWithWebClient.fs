@@ -35,7 +35,7 @@ let ``When one site download fails but another succeeds Then result should conta
                     None.Of<string>()),
             null,
             [|"http://гыгы.com"; "http://www.infoq.com"|] |> Array.map downloadAsync
-            ).WaitResult().SomeValue.Success
+            ).WaitSuccess()
     
     result |> should contain "infoq"
     !errors |> should haveLength 1
