@@ -20,25 +20,25 @@ namespace FunTools
 
 	public static class Option
 	{
-		public static R To<T, R>(this Option<T> source, Func<T, R> onSome, Func<R> onNone)
+		public static R ConvertTo<T, R>(this Option<T> source, Func<T, R> onSome, Func<R> onNone)
 		{
 			return source.IsSome ? onSome(source.Some) : onNone();
 		}
 
-		public static void Do<T>(this Option<T> source, Action<T> onSome, Action onNone = null)
+		public static void Do<T>(this Option<T> source, Action<T> onSome, Action onNone)
 		{
 			if (source.IsSome) onSome(source.Some);
-			else if (onNone != null) onNone();
+			else onNone();
 		}
 
 		public static Option<R> Map<T, R>(this Option<T> source, Func<T, R> map)
 		{
-			return source.To(x => Some.Of(map(x)), None.Of<R>);
+			return source.ConvertTo(x => Some.Of(map(x)), None.Of<R>);
 		}
 
-		public static T SomeOrDefault<T>(this Option<T> source, T orDefault = default(T))
+		public static T SomeOrDefault<T>(this Option<T> source, T defaultValue = default(T))
 		{
-			return source.IsSome ? source.Some : orDefault;
+			return source.IsSome ? source.Some : defaultValue;
 		}
 	}
 

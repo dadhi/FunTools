@@ -21,20 +21,25 @@ namespace FunTools
 
 	public static class Result
 	{
-		public static R To<T, R>(this Result<T> source, Func<T, R> onSuccess, Func<Exception, R> onFailure)
+		public static R ConvertTo<T, R>(this Result<T> source, Func<T, R> onSuccess, Func<Exception, R> onFailure)
 		{
 			return source.IsSuccess ? onSuccess(source.Success) : onFailure(source.Failure);
 		}
 
-		public static void Do<T>(this Result<T> source, Action<T> onSuccess, Action<Exception> onFailure = null)
+		public static R ConvertTo<T, R>(this Result<T> source, Func<T, R> onSuccess, R defaultValue)
+		{
+			return source.IsSuccess ? onSuccess(source.Success) : defaultValue;
+		}
+
+		public static void Do<T>(this Result<T> source, Action<T> onSuccess, Action<Exception> onFailure)
 		{
 			if (source.IsSuccess) onSuccess(source.Success);
-			else if (onFailure != null) onFailure(source.Failure);
+			else onFailure(source.Failure);
 		}
 
 		public static Result<R> Map<T, R>(this Result<T> source, Func<T, R> map)
 		{
-			return source.To(x => Success.Of(map(x)), Failure.Of<R>);
+			return source.ConvertTo(x => Success.Of(map(x)), Failure.Of<R>);
 		}
 
 		public static Result<T> OnSuccess<T>(this Result<T> source, Action<T> action)

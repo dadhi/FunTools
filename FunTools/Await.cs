@@ -136,6 +136,14 @@ namespace FunTools
 			return Many(choose, defaultResult, sources.ToArray());
 		}
 
+		public static Await<R> AwaitSome<T, R>(
+			this IEnumerable<Await<T>> sources,
+			Func<Result<T>, Option<R>> choose,
+			R defaultResult = default(R))
+		{
+			return Many((x, _) => choose(x), defaultResult, sources.ToArray());
+		}
+
 		public static Await<R> Many<T1, T2, R>(
 			Await<T1> source1,
 			Await<T2> source2,

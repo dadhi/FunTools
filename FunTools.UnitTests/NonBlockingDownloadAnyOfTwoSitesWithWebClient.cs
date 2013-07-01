@@ -17,12 +17,12 @@ namespace FunTools.UnitTests
 		{
 			// Arrange
 			// Act
-			var urls = new[] {"http://www.google.com", "http://www.infoq.com"};
+			var urls = new[] { "http://www.google.com", "http://www.infoq.com" };
 
 			var success = urls.Select(DownloadAsync)
-			    .AwaitSome((x, _) => Some.Of(x.Success))
+				.AwaitSome((x, _) => Some.Of(x.Success))
 				.WaitSuccess();
-			
+
 			// Assert
 			(success.Contains("google") || success.Contains("infoq")).Should().BeTrue();
 		}
@@ -32,14 +32,13 @@ namespace FunTools.UnitTests
 		public void If_both_sites_downloads_are_successfull_Then_result_should_contain_first_awaited_download()
 		{
 			// Arrange
+			var urls = new[] { "http://www.google.com", "http://www.infoq.com" };
 			var errors = new List<Exception>();
 
+
 			// Act
-			var result = Await.Many(
-				(x, _) => x.OnFailure(errors.Add).To(Some.Of, ex => None.Of<string>()),
-				null,
-				DownloadAsync("http://www.google.com"),
-				DownloadAsync("http://www.infoq.com"))
+			var result = urls.Select(DownloadAsync)
+				.AwaitSome(x => x.OnFailure(errors.Add).ConvertTo(Some.Of, None.Of<string>()))
 				.WaitSuccess();
 
 			// Assert
@@ -55,7 +54,7 @@ namespace FunTools.UnitTests
 
 			// Act;
 			var result = Await.Many(
-				(x, _) => x.OnFailure(errors.Add).To(Some.Of, ex => None.Of<string>()),
+				(x, _) => x.OnFailure(errors.Add).ConvertTo(Some.Of, ex => None.Of<string>()),
 				null,
 				DownloadAsync("http://דûדû.com"),
 				DownloadAsync("http://www.infoq.com"))
@@ -74,7 +73,7 @@ namespace FunTools.UnitTests
 
 			// Act
 			var result = Await.Many(
-				(x, _) => x.OnFailure(errors.Add).To(Some.Of, ex => None.Of<string>()),
+				(x, _) => x.OnFailure(errors.Add).ConvertTo(Some.Of, ex => None.Of<string>()),
 				null,
 				DownloadAsync("http://דûדû.com"),
 				DownloadAsync("http://ץוץו.com"))
