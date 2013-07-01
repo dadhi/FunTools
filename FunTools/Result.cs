@@ -5,9 +5,9 @@ namespace FunTools
 {
 	public static class Success
 	{
-		public static Result<T> Of<T>(T result)
+		public static Result<T> Of<T>(T success)
 		{
-			return new Result<T>(result);
+			return new Result<T>(success);
 		}
 	}
 
@@ -21,6 +21,11 @@ namespace FunTools
 
 	public static class Result
 	{
+		public static Result<T> Of<T>(T success, Exception failure)
+		{
+			return failure == null ? Success.Of(success) : Failure.Of<T>(failure);
+		}
+		
 		public static R ConvertTo<T, R>(this Result<T> source, Func<T, R> onSuccess, Func<Exception, R> onFailure)
 		{
 			return source.IsSuccess ? onSuccess(source.Success) : onFailure(source.Failure);

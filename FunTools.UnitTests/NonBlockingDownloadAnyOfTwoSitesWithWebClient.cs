@@ -54,7 +54,7 @@ namespace FunTools.UnitTests
 
 			// Act;
 			var result = Await.Many(
-				(x, _) => x.OnFailure(errors.Add).ConvertTo(Some.Of, ex => None.Of<string>()),
+				(x, _) => x.OnFailure(errors.Add).ConvertTo(Some.Of, None.Of<string>()),
 				null,
 				DownloadAsync("http://ãûãû.com"),
 				DownloadAsync("http://www.infoq.com"))
@@ -92,13 +92,9 @@ namespace FunTools.UnitTests
 			return complete =>
 			{
 				var webClient = new WebClient();
+
 				var awaitDownload = Await.Event<DownloadDataCompletedEventArgs, DownloadDataCompletedEventHandler, string>(
-					e =>
-					{
-						if (e.Error != null)
-							e.Error.ReThrow();
-						return Encoding.ASCII.GetString(e.Result);
-					},
+					e => Result.Of(Encoding.ASCII.GetString(e.Result), e.Error).Success,
 					h => webClient.DownloadDataCompleted += h,
 					h => webClient.DownloadDataCompleted -= h,
 					a => a.Invoke);
