@@ -35,7 +35,6 @@ namespace FunTools.UnitTests
 			var urls = new[] { "http://www.google.com", "http://www.infoq.com" };
 			var errors = new List<Exception>();
 
-
 			// Act
 			var result = urls.Select(DownloadAsync)
 				.AwaitSome(x => x.OnFailure(errors.Add).ConvertTo(Some.Of, None.Of<string>()))

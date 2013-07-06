@@ -91,7 +91,7 @@ namespace FunTools
 
 				Complete<R> cancelRestAndComplete = result => completeFirst.Do(() =>
 				{
-					cancels.Each(x => Try.Do(() => x()));
+					cancels.ForEach(x => Try.Do(() => x()));
 					complete(result);
 				});
 
@@ -162,7 +162,7 @@ namespace FunTools
 		public static Await<Result<T>[]> All<T>(params Await<T>[] sources)
 		{
 			var results = new Result<T>[sources.Length];
-			return Many((x, i) => None.Of<Result<T>[]>().Of(() => results[i] = x), results, sources);
+			return Many((x, i) => None.Of<Result<T>[]>().Apply(_ => results[i] = x), results, sources);
 		}
 
 		public static Await<T> Any<T>(params Await<T>[] sources)
@@ -486,45 +486,6 @@ namespace FunTools
 		}
 
 		private Stack() { }
-	}
-
-	internal static class Utils
-	{
-		public static string Display(this Type type)
-		{
-			var name = type.Name;
-			if (!type.IsGenericType)
-				return name;
-
-			var genericArgs = type.GetGenericArguments();
-			var genericArgsString = type.IsGenericTypeDefinition ? new string(',', genericArgs.Length - 1)
-				: string.Join(", ", genericArgs.Select(x => x.Display()).ToArray());
-			return name.Substring(0, name.LastIndexOf('`')) + "<" + genericArgsString + ">";
-		}
-
-		public static string Of(this string format, params object[] args)
-		{
-			return string.Format(format, args.Select(x => x is Type ? ((Type)x).Display() : x).ToArray());
-		}
-
-		public static void Each<T>(this IList<T> source, Action<T> action)
-		{
-			var count = source.Count;
-			for (var i = 0; i < count; i++)
-				action(source[i]);
-		}
-
-		public static void Each<T>(this IEnumerable<T> source, Action<T> action)
-		{
-			foreach (var x in source)
-				action(x);
-		}
-
-		public static T Of<T>(this T result, Action action)
-		{
-			action();
-			return result;
-		}
 	}
 
 	#endregion

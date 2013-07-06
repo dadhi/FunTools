@@ -20,6 +20,11 @@ namespace FunTools
 
 	public static class Option
 	{
+		public static Option<T> Of<T>(T some, bool isNone)
+		{
+			return isNone ? None.Of<T>() : Some.Of(some);
+		}
+		
 		public static R ConvertTo<T, R>(this Option<T> source, Func<T, R> onSome, Func<R> onNone)
 		{
 			return source.IsSome ? onSome(source.Some) : onNone();
