@@ -11,6 +11,7 @@ namespace FunTools.UnitTests.Playground
 	public static class PropertyTests
 	{
 		[Test]
+		[Ignore]
 		public static void Main()
 		{
 			Thread.CurrentThread.Priority = ThreadPriority.Highest;

@@ -20,20 +20,20 @@ namespace FunTools
 
 	public static class Option
 	{
-		public static Option<T> Of<T>(T some, bool isNone)
+		public static Option<T> Of<T>(T value)
 		{
-			return isNone ? None.Of<T>() : Some.Of(some);
+			return (object)value == null ? None.Of<T>() : Some.Of(value);
 		}
 		
-		public static R ConvertTo<T, R>(this Option<T> source, Func<T, R> onSome, Func<R> onNone)
+		public static R ConvertTo<T, R>(this Option<T> source, Func<T, R> some, Func<R> none)
 		{
-			return source.IsSome ? onSome(source.Some) : onNone();
+			return source.IsSome ? some(source.Some) : none();
 		}
 
-		public static void Do<T>(this Option<T> source, Action<T> onSome, Action onNone)
+		public static void Do<T>(this Option<T> source, Action<T> some, Action none)
 		{
-			if (source.IsSome) onSome(source.Some);
-			else onNone();
+			if (source.IsSome) some(source.Some);
+			else none();
 		}
 
 		public static Option<R> Map<T, R>(this Option<T> source, Func<T, R> map)
@@ -51,7 +51,7 @@ namespace FunTools
 	{
 		public static implicit operator Option<T>(T value)
 		{
-			return new Option<T>(value);
+			return Option.Of(value);
 		}
 
 		public readonly static Option<T> None = new Option<T>();
@@ -60,9 +60,8 @@ namespace FunTools
 		{
 			get
 			{
-				if (IsNone)
-					throw new InvalidOperationException("Some is not defined for None.");
-				return _value;
+				if (IsSome) return _value;
+				throw new InvalidOperationException("Expecting Some values but found None.");
 			}
 		}
 
@@ -104,8 +103,7 @@ namespace FunTools
 
 		internal Option(T value)
 		{
-			if (value == null)
-				throw new ArgumentNullException("value");
+			if (value == null) throw new ArgumentNullException("value");
 			_value = value;
 			_isSome = true;
 		}

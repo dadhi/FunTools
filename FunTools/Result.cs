@@ -26,20 +26,20 @@ namespace FunTools
 			return failure == null ? Success.Of(success) : Failure.Of<T>(failure);
 		}
 		
-		public static R ConvertTo<T, R>(this Result<T> source, Func<T, R> onSuccess, Func<Exception, R> onFailure)
+		public static R ConvertTo<T, R>(this Result<T> source, Func<T, R> success, Func<Exception, R> failure)
 		{
-			return source.IsSuccess ? onSuccess(source.Success) : onFailure(source.Failure);
+			return source.IsSuccess ? success(source.Success) : failure(source.Failure);
 		}
 
-		public static R ConvertTo<T, R>(this Result<T> source, Func<T, R> onSuccess, R defaultValue)
+		public static R ConvertTo<T, R>(this Result<T> source, Func<T, R> success, R defaultValue)
 		{
-			return source.IsSuccess ? onSuccess(source.Success) : defaultValue;
+			return source.IsSuccess ? success(source.Success) : defaultValue;
 		}
 
-		public static void Do<T>(this Result<T> source, Action<T> onSuccess, Action<Exception> onFailure)
+		public static void Do<T>(this Result<T> source, Action<T> success, Action<Exception> failure)
 		{
-			if (source.IsSuccess) onSuccess(source.Success);
-			else onFailure(source.Failure);
+			if (source.IsSuccess) success(source.Success);
+			else failure(source.Failure);
 		}
 
 		public static Result<R> Map<T, R>(this Result<T> source, Func<T, R> map)
@@ -89,43 +89,6 @@ namespace FunTools
 		}
 	}
 
-	public static class Try
-	{
-		public static Result<T> Do<T>(Func<T> action, Action<Exception> onFailure = null)
-		{
-			try
-			{
-				return Success.Of(action());
-			}
-			catch (Exception ex)
-			{
-				(onFailure ?? Setup.OnFailure)(ex);
-				return Failure.Of<T>(ex);
-			}
-		}
-
-		public static Result<Empty> Do(Action action, Action<Exception> onFailure = null)
-		{
-			try
-			{
-				action();
-				return Empty.Value;
-			}
-			catch (Exception ex)
-			{
-				(onFailure ?? Setup.OnFailure)(ex);
-				return Failure.Of<Empty>(ex);
-			}
-		}
-
-		public static class Setup
-		{
-			public static Action<Exception> OnFailure = DoNothing;
-
-			public static void DoNothing(Exception ex) { }
-		}
-	}
-
 	public sealed class Result<T>
 	{
 		public static implicit operator Result<T>(T value)
@@ -152,8 +115,8 @@ namespace FunTools
 		{
 			get
 			{
-				if (!IsFailure)
-					throw new InvalidOperationException("Failure is not defined for Success value.");
+				if (IsSuccess)
+					throw new InvalidOperationException("Expecting Failure but found Success instead.");
 				return _failure;
 			}
 		}
@@ -199,6 +162,43 @@ namespace FunTools
 		}
 
 		#endregion
+	}
+
+	public static class Try
+	{
+		public static Result<T> Do<T>(Func<T> action, Action<Exception> onFailure = null)
+		{
+			try
+			{
+				return Success.Of(action());
+			}
+			catch (Exception ex)
+			{
+				(onFailure ?? Setup.OnFailure)(ex);
+				return Failure.Of<T>(ex);
+			}
+		}
+
+		public static Result<Empty> Do(Action action, Action<Exception> onFailure = null)
+		{
+			try
+			{
+				action();
+				return Empty.Value;
+			}
+			catch (Exception ex)
+			{
+				(onFailure ?? Setup.OnFailure)(ex);
+				return Failure.Of<Empty>(ex);
+			}
+		}
+
+		public static class Setup
+		{
+			public static Action<Exception> OnFailure = DoNothing;
+
+			public static void DoNothing(Exception ex) { }
+		}
 	}
 
 	public sealed class Empty
