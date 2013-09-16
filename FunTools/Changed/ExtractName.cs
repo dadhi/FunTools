@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace DryTools
+namespace FunTools.Changed
 {
 	public static class ExtractName
 	{

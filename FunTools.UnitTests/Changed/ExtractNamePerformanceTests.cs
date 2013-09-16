@@ -2,9 +2,10 @@ using System;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using FluentAssertions;
+using FunTools.Changed;
 using NUnit.Framework;
 
-namespace DryTools.UnitTests
+namespace FunTools.UnitTests.Changed
 {
 	[TestFixture]
 	public class ExtractNamePerformanceTests

@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunTools", "FunTools\FunTools.csproj", "{35675DB6-C96F-4870-BCC8-600DE69C6F68}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunTools.UnitTests", "FunTools.UnitTests\FunTools.UnitTests.csproj", "{D04607CB-5F87-4228-B824-B704CC505AB0}"
