@@ -50,6 +50,7 @@
     <Compile Include="FsUnitSample.fs" />
     <Compile Include="NonBlockingDownloadAnyOfTwoSitesWithWebClient.fs" />
     <None Include="Test.fsx" />
+    <Compile Include="ChangedTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FunTools\FunTools.csproj">

@@ -20,15 +20,18 @@ namespace FunTools.Changed
             return changed.Value;
         }
 
+        public static implicit operator Changed<TValue>(TValue initialValue)
+        {
+            return new Changed<TValue>(initialValue);
+        }
+
         public static readonly PropertyChangedEventArgs ChangedEventArgs = new PropertyChangedEventArgs("Value");
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public delegate bool ChangeCondition(TValue oldValue, TValue newValue);
 
-        public Changed(
-            TValue initialValue = default(TValue),
-            ChangeCondition isChanged = null) // Use !Equals(a, b) by default.
+        public Changed(TValue initialValue = default(TValue), ChangeCondition isChanged = null) // By default uses Changed.NotEqual
         {
             _value = initialValue;
             _isChanged = isChanged ?? NotEqual;
@@ -66,10 +69,18 @@ namespace FunTools.Changed
         private TValue _value;
         private ChangeCondition _isChanged;
 
-        private bool NotEqual(TValue oldValue, TValue newValue)
+        private static bool NotEqual(TValue oldValue, TValue newValue)
         {
             return !ReferenceEquals(oldValue, newValue) &&
                    (ReferenceEquals(oldValue, null) || !oldValue.Equals(newValue));
+        }
+    }
+
+    public static class Changed
+    {
+        public static Changed<TValue> From<TValue>(TValue initialValue = default(TValue), Changed<TValue>.ChangeCondition isChanged = null)
+        {
+            return new Changed<TValue>(initialValue, isChanged);
         }
     }
 
