@@ -24,14 +24,14 @@ namespace FunTools.Changed
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public delegate bool ChangeCondition(TValue oldValue, TValue setValue);
+        public delegate bool ChangeCondition(TValue oldValue, TValue newValue);
 
         public Changed(
             TValue initialValue = default(TValue),
-            ChangeCondition changeCondition = null) // Use !Equals(a, b) by default.
+            ChangeCondition isChanged = null) // Use !Equals(a, b) by default.
         {
             _value = initialValue;
-            _changeCondition = changeCondition;
+            _isChanged = isChanged ?? NotEqual;
         }
 
         public TValue Value
@@ -42,27 +42,35 @@ namespace FunTools.Changed
             }
             set
             {
-                if (_changeCondition != null && !_changeCondition(_value, value) || Equals(_value, value))
-                    return;
+                if (_isChanged == null)
+                    throw new ChangedException(string.Format(
+                        "Recursive change detected (OR change is intermingled by multiple threads) for value {0} of type {1}.", _value, typeof(TValue)));
 
-                if (_changing)
-                    throw new ChangedException(string.Format("Recursive change dectected of {0}.", _value));
+                if (!_isChanged(_value, value))
+                    return;
 
                 _value = value;
 
-                var changed = PropertyChanged;
-                if (changed == null) 
+                var changedEvent = PropertyChanged;
+                if (changedEvent == null)
                     return;
 
-                _changing = true;
-                try { changed(this, ChangedEventArgs); }
-                finally { _changing = false; }
+                // Nullify change checker as indicator for recursive event invocation and restore it when event completed.
+                // That way we don't need to introduce separate "_isChanging" field.
+                var isChanged = _isChanged; _isChanged = null;
+                try { changedEvent(this, ChangedEventArgs); }
+                finally { _isChanged = isChanged; }
             }
         }
 
         private TValue _value;
-        private readonly ChangeCondition _changeCondition;
-        private bool _changing;
+        private ChangeCondition _isChanged;
+
+        private bool NotEqual(TValue oldValue, TValue newValue)
+        {
+            return !ReferenceEquals(oldValue, newValue) &&
+                   (ReferenceEquals(oldValue, null) || !oldValue.Equals(newValue));
+        }
     }
 
     public class ChangedException : InvalidOperationException
