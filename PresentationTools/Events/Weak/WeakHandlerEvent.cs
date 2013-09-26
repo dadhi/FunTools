@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using DryTools;
+using FunTools;
 
 namespace PresentationTools.Events.Weak
 {
@@ -10,17 +10,13 @@ namespace PresentationTools.Events.Weak
 	{
 		public WeakHandlerEvent(Func<TEventHandler, Action<object, TEvent>> convertFromEventHandler, Action<Action> strategy = null)
 		{
-			Ensure.NotNull(() => convertFromEventHandler);
-
-			_convertFromEventHandler = convertFromEventHandler;
-
+			_convertFromEventHandler = convertFromEventHandler.ThrowIfNull();
 			_strategy = strategy ?? (a => a());
 		}
 
 		public void Subscribe(TEventHandler handler)
 		{
-			Ensure.NotNull(() => handler);
-
+		    handler.ThrowIfNull();
 			lock (_weakHandlers)
 			{
 				_weakHandlers.RemoveAll(x => !x.IsAlive);
@@ -30,8 +26,7 @@ namespace PresentationTools.Events.Weak
 
 		public void Unsubscribe(TEventHandler handler)
 		{
-			Ensure.NotNull(() => handler);
-
+            handler.ThrowIfNull();
 			if (HandlerCount == 0)
 				return;
 

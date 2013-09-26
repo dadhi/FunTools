@@ -1,5 +1,5 @@
 ﻿using System;
-using DryTools;
+using FunTools;
 
 namespace PresentationTools.Reactives
 {
@@ -31,8 +31,7 @@ namespace PresentationTools.Reactives
 
 		public LazyValueReactive(Func<T> initializer, bool notifyAlways = false)
 		{
-			Ensure.NotNull(() => initializer);
-			_initializer = initializer;
+			_initializer = initializer.ThrowIfNull();
 			NotifyAlways = notifyAlways;
 		}
 

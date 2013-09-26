@@ -1,6 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
-using DryTools;
+using FunTools;
 using PresentationTools.Events.Weak;
 
 namespace PresentationTools.Reactives
@@ -15,10 +15,8 @@ namespace PresentationTools.Reactives
 
 		public ProxyReactive(Func<T> getValue, Action<T> setValue, params INotifyPropertyChanged[] notifiers)
 		{
-			Ensure.NotNull(() => getValue, () => setValue);
-
-			_getValue = getValue;
-			_setValue = setValue;
+			_getValue = getValue.ThrowIfNull();
+			_setValue = setValue.ThrowIfNull();
 
 			notifiers.ForEach(x => x.SubscribeWeakly(this, (r, s, e) => r.NotifyPropertyChanged()));
 		}

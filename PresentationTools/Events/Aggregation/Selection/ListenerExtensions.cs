@@ -1,3 +1,5 @@
+using FunTools;
+
 namespace PresentationTools.Events.Aggregation.Selection
 {
 	public static class ListenerExtensions
@@ -9,7 +11,7 @@ namespace PresentationTools.Events.Aggregation.Selection
 
 		public static IListen<T> Of<T>(this IListen<T> listener, EventHub eventHub)
 		{
-			eventHub.Subscribe(listener);
+			eventHub.ThrowIfNull().Subscribe(listener);
 			return listener;
 		}
 	}

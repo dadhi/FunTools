@@ -1,9 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Windows.Input;
-using PresentationTools.Events;
+using FunTools;
 using PresentationTools.Events.Weak;
-using DryTools;
 
 namespace PresentationTools.Reactives
 {
@@ -22,10 +21,8 @@ namespace PresentationTools.Reactives
 			Func<object, bool> canExecute,
 			params INotifyPropertyChanged[] canExecuteNotifiers)
 		{
-			Ensure.NotNull(() => execute, () => canExecute);
-
-			_execute = execute;
-			_canExecute = canExecute;
+			_execute = execute.ThrowIfNull();
+			_canExecute = canExecute.ThrowIfNull();
 			_canExecuteNotifiers = canExecuteNotifiers;
 
 			_canExecuteNotifiers.ForEach(x => x.SubscribeWeakly(this, (c, s, e) => c.NotifyCanExecuteChanged()));

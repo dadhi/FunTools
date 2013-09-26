@@ -65,11 +65,7 @@ namespace FunTools.UnitTests
 		[Test]
 		public void Test_convert_Result_to_some_other_type()
 		{
-			// Arrange
 			var result = Success.Of(1).ConvertTo(Some.Of, None.Of<int>());
-
-			// Act
-			// Assert
 			Assert.AreEqual(1, result.Some);
 		}
 	}

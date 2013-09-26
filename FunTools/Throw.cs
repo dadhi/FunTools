@@ -18,6 +18,12 @@ namespace FunTools
             throw GetException(message == null ? Format(ARG_HAS_IMVALID_CONDITION, typeof(T)) : Format(message, arg0, arg1, arg2));
         }
 
+        public static T ThrowIf<T>(this T arg, Func<T, bool> throwCondition, string message = null, object arg0 = null, object arg1 = null, object arg2 = null)
+        {
+            if (!throwCondition(arg)) return arg;
+            throw GetException(message == null ? Format(ARG_HAS_IMVALID_CONDITION, typeof(T)) : Format(message, arg0, arg1, arg2));
+        }
+
         public static void If(bool throwCondition, string message, object arg0 = null, object arg1 = null, object arg2 = null)
         {
             if (!throwCondition) return;
@@ -31,9 +37,12 @@ namespace FunTools
             return string.Format(message, Print(arg0), Print(arg1), Print(arg2));
         }
 
-        private static string Print(object obj)
+        private static string Print(object arg)
         {
-            return obj == null ? null : obj is Type ? ((Type)obj).Print() : obj.ToString();
+            return arg == null ? null
+                : arg is Type ? ((Type)arg).Print()
+                : arg is Func<object> ? Print(((Func<object>)arg).Invoke())
+                : arg.ToString();
         }
 
         private static readonly string ARG_IS_NULL = "Argument of type {0} is null.";

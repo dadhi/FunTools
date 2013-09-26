@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reflection;
-using DryTools;
+using FunTools;
 
 namespace PresentationTools.Events.Aggregation
 {
@@ -9,10 +9,8 @@ namespace PresentationTools.Events.Aggregation
 		public static Action<object, object> ToOpenHandlerOfOneArg<TTarget>(this MethodInfo method)
 			where TTarget : class
 		{
-			Ensure.NotNull(() => method);
-
-			var parameters = method.GetParameters();
-			Ensure.Equal(() => parameters.Length, 1, "Method should have only one parameter");
+		    var parameters = method.ThrowIfNull()
+                .GetParameters().ThrowIf(ps => ps.Length != 1,  "Method should have only one parameter");
 
 			var handler = (Action<TTarget, object>)_targetMethodOfOneArg
 				.MakeGenericMethod(typeof(TTarget), parameters[0].ParameterType)

@@ -1,5 +1,5 @@
 using System;
-using DryTools;
+using FunTools;
 
 namespace PresentationTools.Events.Aggregation
 {
@@ -8,9 +8,8 @@ namespace PresentationTools.Events.Aggregation
 	{
 		public Listener(TTarget target, Action<TTarget, TEvent> handler)
 		{
-			Ensure.NotNull(() => handler, () => target);
-			_weakTarget = new WeakReference(target);
-			_handler = handler;
+		    _handler = handler.ThrowIfNull();
+		    _weakTarget = new WeakReference(target.ThrowIfNull());
 		}
 
 		public void Listen(TEvent e)

@@ -1,5 +1,5 @@
 using System;
-using DryTools;
+using FunTools;
 using PresentationTools.Events.Aggregation.Selection;
 
 namespace PresentationTools.Events.Aggregation.Extensions
@@ -8,7 +8,6 @@ namespace PresentationTools.Events.Aggregation.Extensions
 	{
 		public static IListen<TEvent> Subscribe<TEvent>(this EventHub hub, Action<TEvent> handler, Action<Action> strategy = null)
 		{
-			Ensure.NotNull(() => hub, () => handler);
 			return new Handler<TEvent>(handler).Of(hub);
 		}
 
@@ -20,7 +19,7 @@ namespace PresentationTools.Events.Aggregation.Extensions
 
 			public Handler(Action<TEvent> handler)
 			{
-				_handler = handler;
+				_handler = handler.ThrowIfNull();
 			}
 
 			public void Listen(TEvent e)

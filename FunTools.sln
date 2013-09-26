@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunTools.UnitTests", "FunTo
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FunTools.UnitTests.FS", "FunTools.UnitTests.FS\FunTools.UnitTests.FS.fsproj", "{C54584FE-FED4-4DB1-826A-DB3935752C84}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PresentationTools", "PresentationTools\PresentationTools.csproj", "{32DC2E6C-6705-4026-8DA1-0DBB3A3D2F47}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,10 @@ Global
 		{C54584FE-FED4-4DB1-826A-DB3935752C84}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C54584FE-FED4-4DB1-826A-DB3935752C84}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C54584FE-FED4-4DB1-826A-DB3935752C84}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32DC2E6C-6705-4026-8DA1-0DBB3A3D2F47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32DC2E6C-6705-4026-8DA1-0DBB3A3D2F47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32DC2E6C-6705-4026-8DA1-0DBB3A3D2F47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32DC2E6C-6705-4026-8DA1-0DBB3A3D2F47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

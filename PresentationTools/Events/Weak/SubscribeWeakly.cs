@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel;
-using DryTools;
 
 namespace PresentationTools.Events.Weak
 {
@@ -93,34 +92,34 @@ namespace PresentationTools.Events.Weak
 				(sub, s, e) => handler(sub, (TSender)s, e));
 		}
 
-		public static IDisposable SubscribeWeakly<TSender, TProperty>(
-			this TSender sender,
-			Func<TSender, TProperty> property,
-			Action<TProperty> method)
-			where TSender : class, INotifyPropertyChanged
-		{
-			if (method == null)
-				throw new ArgumentNullException("method");
+        //public static IDisposable SubscribeWeakly<TSender, TProperty>(
+        //    this TSender sender,
+        //    Func<TSender, TProperty> property,
+        //    Action<TProperty> method)
+        //    where TSender : class, INotifyPropertyChanged
+        //{
+        //    if (method == null)
+        //        throw new ArgumentNullException("method");
 
-			var subscriber = method.Target;
-			var methodInfo = method.Method;
-			if (subscriber == null || methodInfo.IsStatic)
-				throw new InvalidOperationException("Static methods are not supported");
+        //    var subscriber = method.Target;
+        //    var methodInfo = method.Method;
+        //    if (subscriber == null || methodInfo.IsStatic)
+        //        throw new InvalidOperationException("Static methods are not supported");
 
-			var propertyName = ExtractName.From(property);
-			var openHandler = GetOpenHandler.FromEventAction<TProperty>(methodInfo);
+        //    var propertyName = ExtractName.From(property);
+        //    var openHandler = GetOpenHandler.FromEventAction<TProperty>(methodInfo);
 
-			return sender.SubscribeWeakly(
-				subscriber,
-				(t, s, e) =>
-				{
-					if (e == null ||
-						string.IsNullOrEmpty(e.PropertyName) ||
-						string.Equals(e.PropertyName, propertyName))
-					{
-						openHandler(t, property(s));
-					}
-				});
-		}
+        //    return sender.SubscribeWeakly(
+        //        subscriber,
+        //        (t, s, e) =>
+        //        {
+        //            if (e == null ||
+        //                string.IsNullOrEmpty(e.PropertyName) ||
+        //                string.Equals(e.PropertyName, propertyName))
+        //            {
+        //                openHandler(t, property(s));
+        //            }
+        //        });
+        //}
 	}
 }

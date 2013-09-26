@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -25,7 +25,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -56,13 +56,10 @@
     <Compile Include="ThrowTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FunTools.UnitTests.FS\FunTools.UnitTests.FS.fsproj">
-      <Project>{C54584FE-FED4-4DB1-826A-DB3935752C84}</Project>
-      <Name>FunTools.UnitTests.FS</Name>
-    </ProjectReference>
     <ProjectReference Include="..\FunTools\FunTools.csproj">
       <Project>{35675DB6-C96F-4870-BCC8-600DE69C6F68}</Project>
       <Name>FunTools</Name>
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

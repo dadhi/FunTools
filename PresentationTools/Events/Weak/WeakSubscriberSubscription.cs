@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading;
-using DryTools;
+using FunTools;
 
 namespace PresentationTools.Events.Weak
 {
@@ -15,13 +15,11 @@ namespace PresentationTools.Events.Weak
 			Action<TEventHandler> unsubscribe,
 			Action<TSubscriber, object, TEvent> handler)
 		{
-			Ensure.NotNull(() => subscriber, () => convertActionToHandler, () => subscribe, () => unsubscribe, () => handler);
-
-			_unsubscribe = unsubscribe;
-			_handler = handler;
-			_weakSubscriber = new WeakReference(subscriber);
-			_wrappedHandler = convertActionToHandler(OnEvent);
-			subscribe(_wrappedHandler);
+			_unsubscribe = unsubscribe.ThrowIfNull();
+			_handler = handler.ThrowIfNull();
+			_weakSubscriber = new WeakReference(subscriber.ThrowIfNull());
+			_wrappedHandler = convertActionToHandler.ThrowIfNull().Invoke(OnEvent);
+			subscribe.ThrowIfNull().Invoke(_wrappedHandler);
 		}
 
 		public void Dispose()

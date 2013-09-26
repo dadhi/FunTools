@@ -1,7 +1,6 @@
 using System;
 using PresentationTools.Events.Aggregation;
 using PresentationTools.Events.Weak;
-using PresentationTools.Events;
 
 namespace PresentationTools.Reactives
 {

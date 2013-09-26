@@ -66,6 +66,8 @@ namespace FunTools.Changed
             }
         }
 
+        #region Implementation
+
         private TValue _value;
         private ChangeCondition _isChanged;
 
@@ -74,6 +76,15 @@ namespace FunTools.Changed
             return !ReferenceEquals(oldValue, newValue) &&
                    (ReferenceEquals(oldValue, null) || !oldValue.Equals(newValue));
         }
+
+        #endregion
+    }
+
+    public sealed class GetComputed<TValue> : IGetChanged<TValue>
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+        
+        public TValue Value { get; private set; }
     }
 
     public static class Changed

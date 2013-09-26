@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using DryTools;
+using FunTools;
 
 namespace PresentationTools.Events.Aggregation
 {
@@ -10,8 +10,7 @@ namespace PresentationTools.Events.Aggregation
 		public void Subscribe<THandle>(THandle handler, Action<Action> strategy = null)
 			where THandle : class
 		{
-			Ensure.NotNull(() => handler);
-
+		    handler.ThrowIfNull();
 			lock (_entriesLocker)
 			{
 				_entries.RemoveAll(x => !x.IsAlive);
@@ -23,7 +22,7 @@ namespace PresentationTools.Events.Aggregation
 		public void Unsubscribe<THandle>(THandle handler)
 			where THandle : class
 		{
-			Ensure.NotNull(() => handler);
+            handler.ThrowIfNull();
 			lock (_entriesLocker)
 				_entries.RemoveAll(x => !x.IsAlive || x.Matches(handler));
 		}
@@ -110,7 +109,7 @@ namespace PresentationTools.Events.Aggregation
 				if (handler == null)
 					return;
 
-				if (_eventType.IsAssignableFrom(e.GetType()))
+				if (_eventType.IsInstanceOfType(e))
 					_strategyFormula(publisherStrategy).Invoke(() => _handleMethod(handler, e));
 			}
 

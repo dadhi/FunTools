@@ -1,5 +1,5 @@
 using System;
-using DryTools;
+using FunTools;
 
 namespace PresentationTools.Events.Aggregation.Selection
 {
@@ -7,13 +7,13 @@ namespace PresentationTools.Events.Aggregation.Selection
 	{
 		public EventSelector(IListen<T> handler)
 		{
-			_handler = Ensure.NotNull(() => handler);
+			_handler = handler.ThrowIfNull();
 		}
 
 		public IListen<TSource> From<TSource>(Func<TSource, T> selector, Func<TSource, bool> condition = null)
 		{
-			Ensure.NotNull(() => selector);
-			return new Listener<IListen<T>, TSource>(
+		    selector.ThrowIfNull();
+            return new Listener<IListen<T>, TSource>(
 				_handler,
 				(x, e) =>
 				{

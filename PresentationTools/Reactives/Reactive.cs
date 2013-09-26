@@ -1,8 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Linq;
+using FunTools;
 using PresentationTools.Events.Weak;
-using DryTools;
 
 namespace PresentationTools.Reactives
 {
@@ -108,11 +108,11 @@ namespace PresentationTools.Reactives
 			return source.Set((x, value) => x.Value = setValue(value));
 		}
 
-		public static Reactive<T> OnChange<T>(this Reactive<T> source, Action<T> onChanged)
-		{
-			source.SubscribeWeakly(x => x.Value, onChanged);
-			return source;
-		}
+        //public static Reactive<T> OnChange<T>(this Reactive<T> source, Action<T> onChanged)
+        //{
+        //    source.SubscribeWeakly(x => x.Value, onChanged);
+        //    return source;
+        //}
 
 		/// <summary>
 		/// Will create Reactive of new type.
@@ -185,25 +185,15 @@ namespace PresentationTools.Reactives
 
 		public static ValidatingReactive<T> Validate<T>(this Reactive<T> source, Func<T, bool> validate, Func<T, string> getErrorMessage)
 		{
-			Ensure.NotNull(() => validate, () => getErrorMessage);
+			validate.ThrowIfNull();
+		    getErrorMessage.ThrowIfNull();
 
-			return source.Validate
-				(x =>
-				{
-					if (validate(x))
-						return null;
-
-					var message = getErrorMessage(x);
-					Ensure.NotNull(() => message);
-
-					return message;
-				});
+			return source.Validate(x => validate(x) ? null : getErrorMessage(x).ThrowIfNull());
 		}
 
 		public static ValidatingReactive<T> Validate<T>(this Reactive<T> source, Func<T, bool> validate, string errorMessage)
 		{
-			Ensure.NotNull(() => errorMessage);
-
+			errorMessage.ThrowIfNull();
 			return source.Validate(validate, _ => errorMessage);
 		}
 
@@ -223,17 +213,15 @@ namespace PresentationTools.Reactives
 			return Of((string)null);
 		}
 
-		public static Reactive<TProperty> ToReactive<TModel, TProperty>(
-			this TModel model,
-			Func<TModel, TProperty> property)
-			where TModel : class, INotifyPropertyChanged
-		{
-			Ensure.NotNull(() => model, () => property);
-
-			var reactive = new ValueReactive<TProperty>(property(model));
-			model.SubscribeWeakly(property, reactive.SetValue);
-			return reactive;
-		}
+        //public static Reactive<TProperty> ToReactive<TModel, TProperty>(
+        //    this TModel model,
+        //    Func<TModel, TProperty> property)
+        //    where TModel : class, INotifyPropertyChanged
+        //{
+        //    var reactive = new ValueReactive<TProperty>(property.ThrowIfNull().Invoke(model.ThrowIfNull()));
+        //    model.SubscribeWeakly(property, reactive.SetValue);
+        //    return reactive;
+        //}
 
 		public static Reactive<T> Where<T>(this Reactive<T> source, Func<T, bool> condition)
 		{

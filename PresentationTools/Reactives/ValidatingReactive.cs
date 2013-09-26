@@ -1,6 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
-using DryTools;
+using FunTools;
 
 namespace PresentationTools.Reactives
 {
@@ -8,10 +8,8 @@ namespace PresentationTools.Reactives
 	{
 		public ValidatingReactive(Reactive<T> source, Func<T, string> validate)
 		{
-			Ensure.NotNull(() => source, () => validate);
-
-			_source = source;
-			_validate = validate;
+			_source = source.ThrowIfNull();
+			_validate = validate.ThrowIfNull();
 
 			IsValid = this.To(_ => Error == null);
 			ValidationError = this.To(_ => Error);
