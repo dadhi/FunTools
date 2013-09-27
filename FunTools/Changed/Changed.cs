@@ -116,11 +116,11 @@ namespace FunTools.Changed
         #endregion
     }
 
-    public sealed class GetComputed<TValue> : IGetChanged<TValue>, IDisposable
+    public class GetComputed<TValue> : IGetChanged<TValue>, IDisposable
     {
-        public GetComputed(Func<TValue> compute)
+        public GetComputed(Func<TValue> getValue)
         {
-            _compute = compute.ThrowIfNull();
+            _getValue = getValue.ThrowIfNull();
             _observed = new List<Observed>();
         }
 
@@ -135,7 +135,7 @@ namespace FunTools.Changed
                 TValue value;
                 try
                 {
-                    value = _compute();
+                    value = _getValue();
                 }
                 finally
                 {
@@ -157,7 +157,7 @@ namespace FunTools.Changed
 
         #region Implementation
 
-        private readonly Func<TValue> _compute;
+        private readonly Func<TValue> _getValue;
         private readonly List<Observed> _observed;
 
         private void NotifyChanged(object sender, PropertyChangedEventArgs e)
@@ -219,6 +219,22 @@ namespace FunTools.Changed
         }
 
         #endregion
+    }
+
+    public sealed class Computed<TValue> : GetComputed<TValue>, IChanged<TValue>
+    {
+        public Computed(Func<TValue> getValue, Action<TValue> setValue) : base(getValue)
+        {
+            _setValue = setValue.ThrowIfNull();
+        }
+
+        public new TValue Value
+        {
+            get { return base.Value; }
+            set { _setValue(value); }
+        }
+
+        private readonly Action<TValue> _setValue;
     }
 
     public class ChangedException : InvalidOperationException
