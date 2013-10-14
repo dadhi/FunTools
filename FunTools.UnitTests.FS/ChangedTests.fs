@@ -1,4 +1,4 @@
-﻿module FunTools.Tests.``Changed tests``
+﻿module FunTools.Tests.ChangedTests
 
 open System
 open NUnit.Framework

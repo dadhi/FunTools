@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -24,34 +23,6 @@ namespace FunTools.Changed
         {
             return new Changed<TValue>(initialValue, isChanged);
         }
-
-        public static void PushAction(Action<IGetChanged> action)
-        {
-            _stack = new Stack<Action<IGetChanged>>(action, _stack);
-        }
-
-        public static void PopAction()
-        {
-            _stack = _stack.Tail;
-        }
-
-        #region Implementation
-
-        [ThreadStatic] private static Stack<Action<IGetChanged>> _stack;
-
-        internal sealed class Stack<T>
-        {
-            public readonly T Head;
-            public readonly Stack<T> Tail;
-
-            public Stack(T head, Stack<T> tail = null)
-            {
-                Head = head;
-                Tail = tail;
-            }
-        }
-
-        #endregion
     }
 
     public sealed class Changed<TValue> : IChanged<TValue>
@@ -77,6 +48,7 @@ namespace FunTools.Changed
         {
             get
             {
+                this.NotifyAccess();
                 return _value;
             }
             set
@@ -121,30 +93,18 @@ namespace FunTools.Changed
         public GetComputed(Func<TValue> getValue)
         {
             _getValue = getValue.ThrowIfNull();
-            _observed = new List<Observed>();
+            _observed = new List<ObservedEntry>();
+            ComputeValueAndSubscribeToChangedParticipants();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public TValue Value
+        public IEnumerable<IGetChanged> Observed
         {
-            get
-            {
-                SetAllAsUnchanged();
-                Changed.PushAction(ObserveChanged);
-                TValue value;
-                try
-                {
-                    value = _getValue();
-                }
-                finally
-                {
-                    Changed.PopAction();
-                }
-                RemoveUnchanged();
-                return value;
-            }
+            get { return _observed.Select(entry => entry.Changed).Where(changed => changed != null); }
         }
+
+        public TValue Value { get { return ComputeValueAndSubscribeToChangedParticipants(); } }
 
         public void Dispose()
         {
@@ -158,13 +118,30 @@ namespace FunTools.Changed
         #region Implementation
 
         private readonly Func<TValue> _getValue;
-        private readonly List<Observed> _observed;
+        private readonly List<ObservedEntry> _observed;
+
+        private TValue ComputeValueAndSubscribeToChangedParticipants()
+        {
+            SetAllAsUnchanged();
+            Computed.PushAction(UpdateChanged);
+            TValue value;
+            try
+            {
+                value = _getValue();
+            }
+            finally
+            {
+                Computed.PopAction();
+            }
+            RemoveUnchanged();
+            return value;
+        }
 
         private void NotifyChanged(object sender, PropertyChangedEventArgs e)
         {
-            var changedEvent = PropertyChanged;
-            if (changedEvent != null)
-                changedEvent(this, e);
+            var evt = PropertyChanged;
+            if (evt != null)
+                evt(this, e);
         }
 
         private void SetAllAsUnchanged()
@@ -173,9 +150,9 @@ namespace FunTools.Changed
                 _observed[i].ChangedRecently = false;
         }
 
-        private void ObserveChanged(IGetChanged changed)
+        private void UpdateChanged(IGetChanged changed)
         {
-            Observed spareObserved = null;
+            ObservedEntry spareObserved = null;
             for (var i = 0; i < _observed.Count; ++i)
             {
                 var observed = _observed[i];
@@ -189,7 +166,7 @@ namespace FunTools.Changed
             }
 
             if (spareObserved == null)
-                _observed.Add(new Observed {Changed = changed, ChangedRecently = true});
+                _observed.Add(new ObservedEntry { Changed = changed, ChangedRecently = true });
             else
             {
                 spareObserved.Changed = changed;
@@ -204,7 +181,7 @@ namespace FunTools.Changed
             for (var i = 0; i < _observed.Count; i++)
             {
                 var observed = _observed[i];
-                if (!observed.ChangedRecently)
+                if (!observed.ChangedRecently && observed.Changed != null)
                 {
                     observed.Changed.PropertyChanged -= NotifyChanged;
                     observed.Changed = null;
@@ -212,7 +189,7 @@ namespace FunTools.Changed
             }
         }
 
-        private sealed class Observed
+        private sealed class ObservedEntry
         {
             public IGetChanged Changed;
             public bool ChangedRecently;
@@ -223,7 +200,8 @@ namespace FunTools.Changed
 
     public sealed class Computed<TValue> : GetComputed<TValue>, IChanged<TValue>
     {
-        public Computed(Func<TValue> getValue, Action<TValue> setValue) : base(getValue)
+        public Computed(Func<TValue> getValue, Action<TValue> setValue)
+            : base(getValue)
         {
             _setValue = setValue.ThrowIfNull();
         }
@@ -235,6 +213,50 @@ namespace FunTools.Changed
         }
 
         private readonly Action<TValue> _setValue;
+    }
+
+    public static class Computed
+    {
+        public static GetComputed<TValue> From<TValue>(Func<TValue> getValue)
+        {
+            return new GetComputed<TValue>(getValue);
+        }
+
+        public static void PushAction(Action<IGetChanged> action)
+        {
+            _stack = new Stack<Action<IGetChanged>>(action, _stack);
+        }
+
+        public static void PopAction()
+        {
+            _stack = _stack.Tail;
+        }
+
+        public static void NotifyAccess(this IGetChanged changed)
+        {
+            var stack = _stack;
+            if (stack != null)
+                stack.Head.Invoke(changed);
+        }
+
+        #region Implementation
+
+        [ThreadStatic]
+        private static Stack<Action<IGetChanged>> _stack;
+
+        internal sealed class Stack<T>
+        {
+            public readonly T Head;
+            public readonly Stack<T> Tail;
+
+            public Stack(T head, Stack<T> tail = null)
+            {
+                Head = head;
+                Tail = tail;
+            }
+        }
+
+        #endregion
     }
 
     public class ChangedException : InvalidOperationException
