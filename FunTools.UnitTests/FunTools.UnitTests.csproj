@@ -51,6 +51,7 @@
     <Compile Include="NonBlockingDownloadAnyOfTwoSitesWithWebClient.cs" />
     <Compile Include="Playground\ExceptionExtensions.cs" />
     <Compile Include="Playground\FastGetPropertyInfoWithExprTree.cs" />
+    <Compile Include="Playground\Reducers.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResultTests.cs" />
     <Compile Include="ThrowTests.cs" />
