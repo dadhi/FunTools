@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Linq.Expressions;
-using FluentAssertions;
 using FunTools.Changed;
 using NUnit.Framework;
 
@@ -59,9 +58,9 @@ namespace FunTools.UnitTests.Changed
 			var expressionToName = stopwatch.ElapsedMilliseconds;
 
 			// Assert
-			(compareStrings * 100).Should().BeGreaterThan(compareStringsInTry);
-			(compareStrings * 1000).Should().BeGreaterThan(funcToName);
-			(compareStrings * 2000).Should().BeGreaterThan(expressionToName);
+            Assert.That(compareStrings * 100, Is.GreaterThan(compareStringsInTry));
+            Assert.That(compareStrings * 1000, Is.GreaterThan(funcToName));
+			Assert.That(compareStrings * 2000, Is.GreaterThan(expressionToName));
 		}
 
 		[Test]
@@ -82,8 +81,7 @@ namespace FunTools.UnitTests.Changed
 			stopwatch.Stop();
 			var funcToName = stopwatch.ElapsedMilliseconds;
 
-			// Assert
-			funcToName.Should().BeLessThan(3000);
+            Assert.That(funcToName, Is.LessThan(3000));
 		}
 
 		#region CUT

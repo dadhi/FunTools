@@ -31,11 +31,11 @@ let ``When one site download fails but another succeeds Then result should conta
             (fun (x : Result<_>) _ ->
                 if x.IsSuccess then Some.Of(x.Success) 
                 else
-                    errors := x.Failure :: !errors
+                    errors := x.Error :: !errors
                     None.Of<string>()),
             null,
-            [|"http://гыгы.com"; "http://www.infoq.com"|] |> Array.map downloadAsync
+            [|"http://гыгы.com"; "http://www.codeproject.com"|] |> Array.map downloadAsync
             ).WaitSuccess()
     
-    result |> should contain "infoq"
+    result |> should contain "codeproject"
     !errors |> should haveLength 1

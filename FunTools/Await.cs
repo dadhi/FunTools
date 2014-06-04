@@ -18,7 +18,7 @@ namespace FunTools
 
 	public delegate Cancelable Await<T>(Complete<T> complete);
 
-	public delegate void Complete<T>(Option<Result<T>> result);
+	public delegate void Complete<T>(Optional<Result<T>> result);
 
 	public delegate void Cancelable();
 
@@ -59,12 +59,12 @@ namespace FunTools
 			{
 				if (result.IsNone)
 					complete(None.Of<Result<R>>());
-				else if (result.Some.IsFailure)
-					complete(Failure.Of<R>(result.Some.Failure));
+				else if (result.Some.IsError)
+					complete(Error.Of<R>(result.Some.Error));
 				else
 				{
 					var converted = Try.Do(() => map(result.Some.Success));
-					complete(converted.IsSuccess ? Success.Of(converted.Success) : Failure.Of<R>(converted.Failure));
+					complete(converted.IsSuccess ? Success.Of(converted.Success) : Error.Of<R>(converted.Error));
 				}
 			});
 		}
@@ -79,7 +79,7 @@ namespace FunTools
 		}
 
 		public static Await<R> Many<T, R>(
-			Func<Result<T>, int, Option<R>> choose,
+			Func<Result<T>, int, Optional<R>> choose,
 			R defaultResult,
 			params Await<T>[] sources)
 		{
@@ -104,9 +104,9 @@ namespace FunTools
 							return;
 
 						var choice = Try.Do(() => choose(result.Some, index));
-						if (choice.IsFailure)
+						if (choice.IsError)
 						{
-							cancelRestAndComplete(Failure.Of<R>(choice.Failure));
+							cancelRestAndComplete(Error.Of<R>(choice.Error));
 						}
 						else if (choice.Success.IsSome)
 						{
@@ -130,7 +130,7 @@ namespace FunTools
 
 		public static Await<R> AwaitSome<T, R>(
 			this IEnumerable<Await<T>> sources,
-			Func<Result<T>, int, Option<R>> choose,
+			Func<Result<T>, int, Optional<R>> choose,
 			R defaultResult = default(R))
 		{
 			return Many(choose, defaultResult, sources.ToArray());
@@ -138,7 +138,7 @@ namespace FunTools
 
 		public static Await<R> AwaitSome<T, R>(
 			this IEnumerable<Await<T>> sources,
-			Func<Result<T>, Option<R>> choose,
+			Func<Result<T>, Optional<R>> choose,
 			R defaultResult = default(R))
 		{
 			return Many((x, _) => choose(x), defaultResult, sources.ToArray());
@@ -148,7 +148,7 @@ namespace FunTools
 			Await<T1> source1,
 			Await<T2> source2,
 			R defaultResult,
-			Func<Option<Result<T1>>, Option<Result<T2>>, Option<R>> choose)
+			Func<Optional<Result<T1>>, Optional<Result<T2>>, Optional<R>> choose)
 		{
 			var result1 = None.Of<Result<T1>>();
 			var result2 = None.Of<Result<T2>>();
@@ -174,7 +174,7 @@ namespace FunTools
 		}
 
 		public static Await<R> Condition<TEventArgs, TEventHandler, R>(
-			Func<Option<TEventArgs>, Option<R>> choose,
+			Func<Optional<TEventArgs>, Optional<R>> choose,
 			Action<TEventHandler> subscribe,
 			Action<TEventHandler> unsubscribe,
 			Func<Action<object, TEventArgs>, TEventHandler> convert)
@@ -182,7 +182,7 @@ namespace FunTools
 			return complete =>
 			{
 				// Create helper action to safely invoke choose action and supply result to completed.
-				Func<Option<TEventArgs>, Complete<R>, bool> tryChooseAndComplete = (e, doComplete) =>
+				Func<Optional<TEventArgs>, Complete<R>, bool> tryChooseAndComplete = (e, doComplete) =>
 				{
 					var choice = Try.Do(() => choose(e));
 					if (choice.IsSuccess && choice.Success.IsNone)
@@ -204,16 +204,16 @@ namespace FunTools
 					var unsubscription = Try.Do(() => unsubscribe(eventHandler));
 
 					// Replacing original failure with unsubscription failure if got one.
-					complete(unsubscription.IsFailure ? Failure.Of<R>(unsubscription.Failure) : x);
+					complete(unsubscription.IsError ? Error.Of<R>(unsubscription.Error) : x);
 				});
 
 				// Convert action to event handler delegate (ignoring event source) and subscribe it.
 				var subscription = Try.Do(() => subscribe(
 					eventHandler = convert((_, e) => tryChooseAndComplete(e, completeAndUnsubscribe))));
 
-				if (subscription.IsFailure)
+				if (subscription.IsError)
 				{
-					complete(Failure.Of<R>(subscription.Failure));
+					complete(Error.Of<R>(subscription.Error));
 					return NothingToCancel;
 				}
 
@@ -228,7 +228,7 @@ namespace FunTools
 		}
 
 		public static Await<R> Event<TEventArgs, TEventHandler, R>(
-			Func<TEventArgs, Option<R>> choose,
+			Func<TEventArgs, Optional<R>> choose,
 			Action<TEventHandler> subscribe,
 			Action<TEventHandler> unsubscribe,
 			Func<Action<object, TEventArgs>, TEventHandler> convert)
@@ -246,7 +246,7 @@ namespace FunTools
 			return source(x => x.Do(onResult ?? (result => result.Do(onSuccess, onFailure)), onCancel));
 		}
 
-		public static Option<Result<T>> Wait<T>(this Await<T> source, int timeoutMilliseconds = Timeout.Infinite)
+		public static Optional<Result<T>> Wait<T>(this Await<T> source, int timeoutMilliseconds = Timeout.Infinite)
 		{
 			var completed = new AutoResetEvent(false);
 
@@ -376,9 +376,9 @@ namespace FunTools
 				return None.Of<Awaiting<T>>();
 			});
 
-			if (movingNext.IsFailure)
+			if (movingNext.IsError)
 			{
-				completer.Do(() => complete(Failure.Of<T>(movingNext.Failure)));
+				completer.Do(() => complete(Error.Of<T>(movingNext.Error)));
 				return NothingToCancel;
 			}
 

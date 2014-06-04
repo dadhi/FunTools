@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30501.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunTools", "FunTools\FunTools.csproj", "{35675DB6-C96F-4870-BCC8-600DE69C6F68}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunTools.UnitTests", "FunTools.UnitTests\FunTools.UnitTests.csproj", "{D04607CB-5F87-4228-B824-B704CC505AB0}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FunTools.UnitTests.FS", "FunTools.UnitTests.FS\FunTools.UnitTests.FS.fsproj", "{C54584FE-FED4-4DB1-826A-DB3935752C84}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PresentationTools", "PresentationTools\PresentationTools.csproj", "{32DC2E6C-6705-4026-8DA1-0DBB3A3D2F47}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Legacy", "Legacy", "{8F0E4BBB-3AD5-49F1-B881-FB40AB67CF77}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,10 +29,6 @@ Global
 		{C54584FE-FED4-4DB1-826A-DB3935752C84}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C54584FE-FED4-4DB1-826A-DB3935752C84}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C54584FE-FED4-4DB1-826A-DB3935752C84}.Release|Any CPU.Build.0 = Release|Any CPU
-		{32DC2E6C-6705-4026-8DA1-0DBB3A3D2F47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{32DC2E6C-6705-4026-8DA1-0DBB3A3D2F47}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{32DC2E6C-6705-4026-8DA1-0DBB3A3D2F47}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{32DC2E6C-6705-4026-8DA1-0DBB3A3D2F47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

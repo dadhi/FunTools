@@ -4,57 +4,57 @@ namespace FunTools
 {
 	public static class Some
 	{
-		public static Option<T> Of<T>(T value)
+		public static Optional<T> Of<T>(T value)
 		{
-			return new Option<T>(value);
+			return new Optional<T>(value);
 		}
 	}
 
 	public static class None
 	{
-		public static Option<T> Of<T>()
+		public static Optional<T> Of<T>()
 		{
-			return Option<T>.None;
+			return Optional<T>.None;
 		}
 	}
 
-	public static class Option
+	public static class Optional
 	{
-		public static Option<T> Of<T>(T value)
+		public static Optional<T> Of<T>(T value)
 		{
 			return (object)value == null ? None.Of<T>() : Some.Of(value);
 		}
 		
-		public static R ConvertTo<T, R>(this Option<T> source, Func<T, R> some, Func<R> none)
+		public static R ConvertTo<T, R>(this Optional<T> source, Func<T, R> some, Func<R> none)
 		{
 			return source.IsSome ? some(source.Some) : none();
 		}
 
-		public static void Do<T>(this Option<T> source, Action<T> some, Action none)
+		public static void Do<T>(this Optional<T> source, Action<T> some, Action none)
 		{
 			if (source.IsSome) some(source.Some);
 			else none();
 		}
 
-		public static Option<R> Map<T, R>(this Option<T> source, Func<T, R> map)
+		public static Optional<R> Map<T, R>(this Optional<T> source, Func<T, R> map)
 		{
 			return source.ConvertTo(x => Some.Of(map(x)), None.Of<R>);
 		}
 
-		public static T SomeOrDefault<T>(this Option<T> source, T defaultValue = default(T))
+		public static T SomeOrDefault<T>(this Optional<T> source, T defaultValue = default(T))
 		{
 			return source.IsSome ? source.Some : defaultValue;
 		}
 	}
 
-	public sealed class Option<T>
+	public sealed class Optional<T>
 	{
-		public static implicit operator Option<T>(T value)
+		public static implicit operator Optional<T>(T value)
 		{
-			return Option.Of(value);
+			return Optional.Of(value);
 		}
 
-		public readonly static Option<T> None = new Option<T>();
+		public readonly static Optional<T> None = new Optional<T>();
 
 		public T Some
 		{
@@ -84,9 +84,9 @@ namespace FunTools
 
 		public override bool Equals(object obj)
 		{
-			return (obj is Option<T>) &&
-				(((Option<T>)obj).IsSome 
-					? IsSome && Equals(((Option<T>)obj).Some, Some)
+			return (obj is Optional<T>) &&
+				(((Optional<T>)obj).IsSome 
+					? IsSome && Equals(((Optional<T>)obj).Some, Some)
 					: IsNone);
 		}
 
@@ -101,14 +101,14 @@ namespace FunTools
 
 		private readonly bool _isSome;
 
-		internal Option(T value)
+		internal Optional(T value)
 		{
 			if (value == null) throw new ArgumentNullException("value");
 			_value = value;
 			_isSome = true;
 		}
 
-		internal Option()
+		internal Optional()
 		{
 		}
 

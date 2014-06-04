@@ -11,24 +11,24 @@ namespace FunTools
 		}
 	}
 
-	public static class Failure
+	public static class Error
 	{
-		public static Result<T> Of<T>(Exception failure)
+		public static Result<T> Of<T>(Exception error)
 		{
-			return new Result<T>(failure);
+			return new Result<T>(error);
 		}
 	}
 
 	public static class Result
 	{
-		public static Result<T> Of<T>(T success, Exception failure)
+		public static Result<T> Of<T>(T success, Exception error)
 		{
-			return failure == null ? Success.Of(success) : Failure.Of<T>(failure);
+			return error == null ? Success.Of(success) : Error.Of<T>(error);
 		}
 		
-		public static R ConvertTo<T, R>(this Result<T> source, Func<T, R> success, Func<Exception, R> failure)
+		public static R ConvertTo<T, R>(this Result<T> source, Func<T, R> success, Func<Exception, R> error)
 		{
-			return source.IsSuccess ? success(source.Success) : failure(source.Failure);
+			return source.IsSuccess ? success(source.Success) : error(source.Error);
 		}
 
 		public static R ConvertTo<T, R>(this Result<T> source, Func<T, R> success, R defaultValue)
@@ -36,15 +36,15 @@ namespace FunTools
 			return source.IsSuccess ? success(source.Success) : defaultValue;
 		}
 
-		public static void Do<T>(this Result<T> source, Action<T> success, Action<Exception> failure)
+		public static void Do<T>(this Result<T> source, Action<T> success, Action<Exception> error)
 		{
 			if (source.IsSuccess) success(source.Success);
-			else failure(source.Failure);
+			else error(source.Error);
 		}
 
 		public static Result<R> Map<T, R>(this Result<T> source, Func<T, R> map)
 		{
-			return source.ConvertTo(x => Success.Of(map(x)), Failure.Of<R>);
+			return source.ConvertTo(x => Success.Of(map(x)), Error.Of<R>);
 		}
 
 		public static Result<T> OnSuccess<T>(this Result<T> source, Action<T> action)
@@ -53,9 +53,9 @@ namespace FunTools
 			return source;
 		}
 
-		public static Result<T> OnFailure<T>(this Result<T> source, Action<Exception> action)
+		public static Result<T> OnError<T>(this Result<T> source, Action<Exception> action)
 		{
-			if (source.IsFailure) action(source.Failure);
+			if (source.IsError) action(source.Error);
 			return source;
 		}
 
@@ -67,11 +67,11 @@ namespace FunTools
 		/// <summary>
 		/// Re-throws exception with preserving it previous stack-trace.
 		/// </summary>
-		/// <param name="failure">exception to re-throw</param>
-		public static void ReThrow(this Exception failure)
+		/// <param name="error">exception to re-throw</param>
+		public static void ReThrow(this Exception error)
 		{
-			Setup.PreserveStackTrace(failure);
-			throw failure;
+			Setup.PreserveStackTrace(error);
+			throw error;
 		}
 
 		public static class Setup
@@ -96,28 +96,28 @@ namespace FunTools
 			return new Result<T>(value);
 		}
 
-		public static implicit operator Result<T>(Exception failure)
+		public static implicit operator Result<T>(Exception error)
 		{
-			return new Result<T>(failure);
+			return new Result<T>(error);
 		}
 
 		public T Success
 		{
 			get
 			{
-				if (IsFailure)
-					_failure.ReThrow();
+				if (IsError)
+					_error.ReThrow();
 				return _success;
 			}
 		}
 
-		public Exception Failure
+		public Exception Error
 		{
 			get
 			{
 				if (IsSuccess)
-					throw new InvalidOperationException("Expecting Failure but found Success instead.");
-				return _failure;
+					throw new InvalidOperationException("Expecting Error but found Success instead.");
+				return _error;
 			}
 		}
 
@@ -126,7 +126,7 @@ namespace FunTools
 			get { return _isSuccess; }
 		}
 
-		public bool IsFailure
+		public bool IsError
 		{
 			get { return !_isSuccess; }
 		}
@@ -135,28 +135,28 @@ namespace FunTools
 		{
 			return IsSuccess
 				? "Success<" + typeof(T).Name + ">(" + ((object)Success == null ? "null" : Success.ToString()) + ")"
-				: "Failure<" + typeof(T).Name + ">(\n" + Failure + "\n)";
+				: "Error<" + typeof(T).Name + ">(\n" + Error + "\n)";
 		}
 
 		#region Implementation
 
 		private readonly T _success;
 
-		private readonly Exception _failure;
+		private readonly Exception _error;
 
 		private readonly bool _isSuccess;
 
 		internal Result(T success)
 		{
 			_success = success;
-			_failure = null;
+			_error = null;
 			_isSuccess = true;
 		}
 
-		internal Result(Exception failure)
+		internal Result(Exception error)
 		{
-			if (failure == null) throw new ArgumentNullException("failure");
-			_failure = failure;
+			if (error == null) throw new ArgumentNullException("error");
+			_error = error;
 			_success = default(T);
 			_isSuccess = false;
 		}
@@ -166,20 +166,20 @@ namespace FunTools
 
 	public static class Try
 	{
-		public static Result<T> Do<T>(Func<T> action, Action<Exception> onFailure = null)
+		public static Result<T> Do<T>(Func<T> action, Action<Exception> onError = null)
 		{
 			try
 			{
 				return Success.Of(action());
 			}
-			catch (Exception ex)
+			catch (Exception error)
 			{
-				(onFailure ?? Setup.OnFailure)(ex);
-				return Failure.Of<T>(ex);
+				(onError ?? Setup.OnError)(error);
+				return Error.Of<T>(error);
 			}
 		}
 
-		public static Result<Empty> Do(Action action, Action<Exception> onFailure = null)
+		public static Result<Empty> Do(Action action, Action<Exception> onError = null)
 		{
 			try
 			{
@@ -188,14 +188,14 @@ namespace FunTools
 			}
 			catch (Exception ex)
 			{
-				(onFailure ?? Setup.OnFailure)(ex);
-				return Failure.Of<Empty>(ex);
+				(onError ?? Setup.OnError)(ex);
+				return Error.Of<Empty>(ex);
 			}
 		}
 
 		public static class Setup
 		{
-			public static Action<Exception> OnFailure = DoNothing;
+			public static Action<Exception> OnError = DoNothing;
 
 			public static void DoNothing(Exception ex) { }
 		}

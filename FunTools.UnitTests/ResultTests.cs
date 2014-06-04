@@ -34,8 +34,8 @@ namespace FunTools.UnitTests
 		public void Display_failure_should_be_predictable()
 		{
 			var error = new Exception("ex");
-			var displaySuccess = Failure.Of<int>(error).ToString();
-			Assert.AreEqual("Failure<Int32>(\n" + error + "\n)", displaySuccess);
+			var displaySuccess = Error.Of<int>(error).ToString();
+			Assert.AreEqual("Error<Int32>(\n" + error + "\n)", displaySuccess);
 		}
 
 		[Test]
