@@ -2,116 +2,121 @@ using System;
 
 namespace FunTools
 {
-	public static class Some
-	{
-		public static Optional<T> Of<T>(T value)
-		{
-			return new Optional<T>(value);
-		}
-	}
+    public static class Some
+    {
+        public static Optional<T> Of<T>(T value)
+        {
+            return new Optional<T>(value);
+        }
+    }
 
-	public static class None
-	{
-		public static Optional<T> Of<T>()
-		{
-			return Optional<T>.None;
-		}
-	}
+    public static class None
+    {
+        public static Optional<T> Of<T>()
+        {
+            return Optional<T>.None;
+        }
+    }
 
-	public static class Optional
-	{
-		public static Optional<T> Of<T>(T value)
-		{
-			return (object)value == null ? None.Of<T>() : Some.Of(value);
-		}
-		
-		public static R ConvertTo<T, R>(this Optional<T> source, Func<T, R> some, Func<R> none)
-		{
-			return source.IsSome ? some(source.Some) : none();
-		}
+    public static class Optional
+    {
+        public static Optional<T> Of<T>(T value)
+        {
+            return (object)value == null ? None.Of<T>() : Some.Of(value);
+        }
 
-		public static void Do<T>(this Optional<T> source, Action<T> some, Action none)
-		{
-			if (source.IsSome) some(source.Some);
-			else none();
-		}
+        public static R Match<T, R>(this Optional<T> source, Func<T, R> some, Func<R> none)
+        {
+            return source.IsSome ? some(source.Some) : none();
+        }
 
-		public static Optional<R> Map<T, R>(this Optional<T> source, Func<T, R> map)
-		{
-			return source.ConvertTo(x => Some.Of(map(x)), None.Of<R>);
-		}
+        public static void Match<T>(this Optional<T> source, Action<T> some = null, Action none = null)
+        {
+            if (source.IsSome)
+            {
+                if (some != null)
+                    some(source.Some);
+            }
+            else if (none != null)
+                none();
+        }
 
-		public static T SomeOrDefault<T>(this Optional<T> source, T defaultValue = default(T))
-		{
-			return source.IsSome ? source.Some : defaultValue;
-		}
-	}
+        public static Optional<R> Map<T, R>(this Optional<T> source, Func<T, R> map)
+        {
+            return source.Match(x => Some.Of(map(x)), None.Of<R>);
+        }
 
-	public sealed class Optional<T>
-	{
-		public static implicit operator Optional<T>(T value)
-		{
-			return Optional.Of(value);
-		}
+        public static T SomeOrDefault<T>(this Optional<T> source, T defaultValue = default(T))
+        {
+            return source.IsSome ? source.Some : defaultValue;
+        }
+    }
 
-		public readonly static Optional<T> None = new Optional<T>();
+    public sealed class Optional<T>
+    {
+        public static implicit operator Optional<T>(T value)
+        {
+            return Optional.Of(value);
+        }
 
-		public T Some
-		{
-			get
-			{
-				if (IsSome) return _value;
-				throw new InvalidOperationException("Expecting Some values but found None.");
-			}
-		}
+        public readonly static Optional<T> None = new Optional<T>();
 
-		public bool IsSome
-		{
-			get { return _isSome; }
-		}
+        public T Some
+        {
+            get
+            {
+                if (IsSome) return _value;
+                throw new InvalidOperationException("Expecting Some values but found None.");
+            }
+        }
 
-		public bool IsNone
-		{
-			get { return !_isSome; }
-		}
+        public bool IsSome
+        {
+            get { return _isSome; }
+        }
 
-		public override string ToString()
-		{
-			return IsSome
-				? "Some<" + typeof(T).Name + ">(" + Some + ")"
-				: "None<" + typeof(T).Name + ">()";
-		}
+        public bool IsNone
+        {
+            get { return !_isSome; }
+        }
 
-		public override bool Equals(object obj)
-		{
-			return (obj is Optional<T>) &&
-				(((Optional<T>)obj).IsSome 
-					? IsSome && Equals(((Optional<T>)obj).Some, Some)
-					: IsNone);
-		}
+        public override string ToString()
+        {
+            return IsSome
+                ? "Some<" + typeof(T).Name + ">(" + Some + ")"
+                : "None<" + typeof(T).Name + ">()";
+        }
 
-		public override int GetHashCode()
-		{
-			return IsSome ? Some.GetHashCode() : 0;
-		}
+        public override bool Equals(object obj)
+        {
+            return (obj is Optional<T>) &&
+                (((Optional<T>)obj).IsSome
+                    ? IsSome && Equals(((Optional<T>)obj).Some, Some)
+                    : IsNone);
+        }
 
-		#region Implementation
+        public override int GetHashCode()
+        {
+            return IsSome ? Some.GetHashCode() : 0;
+        }
 
-		private readonly T _value;
+        #region Implementation
 
-		private readonly bool _isSome;
+        private readonly T _value;
 
-		internal Optional(T value)
-		{
-			if (value == null) throw new ArgumentNullException("value");
-			_value = value;
-			_isSome = true;
-		}
+        private readonly bool _isSome;
 
-		internal Optional()
-		{
-		}
+        internal Optional(T value)
+        {
+            if (value == null) throw new ArgumentNullException("value");
+            _value = value;
+            _isSome = true;
+        }
 
-		#endregion
-	}
+        internal Optional()
+        {
+        }
+
+        #endregion
+    }
 }

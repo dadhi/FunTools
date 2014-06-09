@@ -29,7 +29,7 @@ namespace FunTools.UnitTests
 			var errors = new List<Exception>();
 
 			var result = urls.Select(DownloadAsync)
-				.AwaitSome(x => x.OnError(errors.Add).ConvertTo(Some.Of, None.Of<string>()))
+				.AwaitSome(x => x.OnError(errors.Add).Match(Some.Of, None.Of<string>()))
 				.WaitSuccess();
 
             Assert.That(result, Is.StringContaining("codeproject").Or.StringContaining("smell"));
@@ -41,7 +41,7 @@ namespace FunTools.UnitTests
 			var errors = new List<Exception>();
 
 			var result = Await.Many(
-				(x, _) => x.OnError(errors.Add).ConvertTo(Some.Of, None.Of<string>()),
+				(x, _) => x.OnError(errors.Add).Match(Some.Of, None.Of<string>()),
 				null,
 				DownloadAsync("http://דûדû.com"),
                 DownloadAsync("http://www.codeproject.com/"))
@@ -56,7 +56,7 @@ namespace FunTools.UnitTests
 			var errors = new List<Exception>();
 
 			var result = Await.Many(
-				(x, _) => x.OnError(errors.Add).ConvertTo(Some.Of, ex => None.Of<string>()),
+				(x, _) => x.OnError(errors.Add).Match(Some.Of, ex => None.Of<string>()),
 				null,
 				DownloadAsync("http://דûדû.com"),
 				DownloadAsync("http://ץוץו.com"))

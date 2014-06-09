@@ -53,8 +53,8 @@ namespace FunTools.UnitTests
 			var result = Some.Of(Success.Of("hello, world"));
 
 			var words = 
-				result.ConvertTo(
-					x => x.ConvertTo(
+				result.Match(
+					x => x.Match(
 						s => s.Split(','), 
 						_ => new string[0]),
 					() => new string[0]);
@@ -65,7 +65,7 @@ namespace FunTools.UnitTests
 		[Test]
 		public void Test_convert_Result_to_some_other_type()
 		{
-			var result = Success.Of(1).ConvertTo(Some.Of, None.Of<int>());
+			var result = Success.Of(1).Match(Some.Of, None.Of<int>());
 			Assert.AreEqual(1, result.Some);
 		}
 	}
