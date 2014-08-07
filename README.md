@@ -1,4 +1,4 @@
 FunTools
 ========
 
-FunTools: Await and productivity tools.
+FunTools: Await Productivity Tools.

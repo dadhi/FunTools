@@ -38,6 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncSampleFromAyendeBlog.cs" />
+    <Compile Include="EventInValueType.cs" />
     <Compile Include="Union.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
