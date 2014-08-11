@@ -388,12 +388,12 @@ namespace FunTools
                 {
                     var awaiting = source.Current;
                     if (awaiting == null)
-                        throw new InvalidOperationException(EXPECTING_NOTNULL_AWAITING_YIELDED.Of(typeof(Awaiting<T>)));
+                        throw EXPECTING_NOTNULL_AWAITING_YIELDED.Of(typeof(Awaiting<T>));
                     return awaiting;
                 }
 
                 if (typeof(T) != typeof(Empty))
-                    throw new InvalidOperationException(EXPECTING_NONEMPTY_RESULT.Of(typeof(T)));
+                    throw EXPECTING_NONEMPTY_RESULT.Of(typeof(T));
                 return None.Of<Awaiting<T>>();
             });
 

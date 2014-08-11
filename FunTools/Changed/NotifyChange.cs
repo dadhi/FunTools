@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Linq.Expressions;
 
 namespace FunTools.Changed
 {
@@ -155,16 +156,17 @@ namespace FunTools.Changed
 
         public static NotifyChange<TProperty> SelectNotifyChange<TModel, TProperty>(
             this TModel model,
-            Func<TModel, TProperty> getProperty,
+            Expression<Func<TModel, TProperty>> property,
             Func<TProperty, bool> modelNotifyCondition = null)
             where TModel : class, INotifyPropertyChanged
         {
             model.ThrowIfNull();
-            getProperty.ThrowIfNull();
+            property.ThrowIfNull();
 
             modelNotifyCondition = modelNotifyCondition ?? (_ => true);
 
-            var propertyName = ExtractName.From(getProperty);
+            var propertyName = model.GetPropertyName(property);
+            var getProperty = property.Compile();
 
             return Select(
                 () => getProperty(model),

@@ -11,7 +11,7 @@ namespace FunTools.UnitTests.Playground
 	public static class PropertyTests
 	{
 		[Test]
-		[Ignore]
+        [Ignore]
 		public static void Main()
 		{
 			Thread.CurrentThread.Priority = ThreadPriority.Highest;
@@ -37,6 +37,19 @@ namespace FunTools.UnitTests.Playground
 
 			sw.Stop();
 			var cachedExprTime = sw.ElapsedMilliseconds;
+
+            sw.Reset();
+            sw.Start();
+
+            for (var i = 0; i < count; i++)
+            {
+                var p = sw.GetPropertyName(_ => _.Elapsed);
+                GC.KeepAlive(p);
+            }
+
+            sw.Stop();
+            var parseTime = sw.ElapsedMilliseconds;
+
 			Assert.GreaterOrEqual(exprTime, cachedExprTime * 100);
 		}
 	}

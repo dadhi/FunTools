@@ -40,13 +40,25 @@
     <Compile Include="Agent.cs" />
     <Compile Include="Await.cs" />
     <Compile Include="Changed\Changed.cs" />
-    <Compile Include="Changed\ExtractName.cs" />
     <Compile Include="Changed\NotifyChange.cs" />
+    <Compile Include="ReflectionTools.cs" />
     <Compile Include="Optional.cs" />
+    <Compile Include="Reactives\LazyValueReactive.cs" />
+    <Compile Include="Reactives\ProxyReactive.cs" />
+    <Compile Include="Reactives\Reactive.Base.cs" />
+    <Compile Include="Reactives\Reactive.cs" />
+    <Compile Include="Reactives\ReactiveCommand.cs" />
+    <Compile Include="Reactives\ValidatingReactive.cs" />
+    <Compile Include="Reactives\ValueReactive.cs" />
     <Compile Include="Result.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sugar.cs" />
     <Compile Include="Throw.cs" />
+    <Compile Include="Validation\Validator.cs" />
+    <Compile Include="Weak\GetOpenHandler.cs" />
+    <Compile Include="Weak\SubscribeWeakly.cs" />
+    <Compile Include="Weak\WeakHandlerEvent.cs" />
+    <Compile Include="Weak\WeakSubscriberSubscription.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

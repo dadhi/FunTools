@@ -1,8 +1,7 @@
 ﻿using System;
-using FunTools;
 using NUnit.Framework;
 
-namespace DryIoc.UnitTests
+namespace FunTools.UnitTests
 {
     [TestFixture]
     public class ThrowTests
@@ -12,7 +11,7 @@ namespace DryIoc.UnitTests
         {
             string arg = null;
 
-            var ex = Assert.Throws<InvalidOperationException>(() =>
+            var ex = Assert.Throws<DryToolsException>(() =>
                 arg.ThrowIfNull());
 
             Assert.That(ex.Message, Is.StringContaining("null"));
@@ -23,7 +22,7 @@ namespace DryIoc.UnitTests
         {
             string arg = null;
 
-            var ex = Assert.Throws<InvalidOperationException>(() =>
+            var ex = Assert.Throws<DryToolsException>(() =>
                 arg.ThrowIf(arg == null));
 
             Assert.That(ex.Message, Is.StringContaining("Argument of type System.String"));
@@ -34,7 +33,7 @@ namespace DryIoc.UnitTests
         {
             string arg = null;
 
-            var ex = Assert.Throws<InvalidOperationException>(() =>
+            var ex = Assert.Throws<DryToolsException>(() =>
                 Throw.If(arg == null, "Argument is null"));
 
             Assert.That(ex.Message, Is.EqualTo("Argument is null"));
