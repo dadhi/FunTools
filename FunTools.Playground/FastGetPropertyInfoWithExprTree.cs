@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Threading;
 using NUnit.Framework;
 
-namespace FunTools.UnitTests.Playground
+namespace FunTools.Playground
 {
 	[TestFixture]
 	public static class PropertyTests
@@ -50,7 +50,21 @@ namespace FunTools.UnitTests.Playground
             sw.Stop();
             var parseTime = sw.ElapsedMilliseconds;
 
-			Assert.GreaterOrEqual(exprTime, cachedExprTime * 100);
+            sw.Reset();
+            sw.Start();
+
+            for (var i = 0; i < count; i++)
+            {
+                var p = ExtractName.From<Stopwatch, TimeSpan>(_ => _.Elapsed);
+                GC.KeepAlive(p);
+            }
+
+            sw.Stop();
+            var extractTime = sw.ElapsedMilliseconds;
+
+			Assert.Less(cachedExprTime, exprTime * 0.2);
+		    Assert.Less(exprTime, parseTime);
+		    Assert.Less(exprTime, extractTime);
 		}
 	}
 
