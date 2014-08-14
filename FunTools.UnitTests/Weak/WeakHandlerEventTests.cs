@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using DryTools.UnitTests;
 using FunTools.Weak;
 using NUnit.Framework;
 

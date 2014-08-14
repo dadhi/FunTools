@@ -11,6 +11,11 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FunTools.UnitTests.FS", "Fu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunTools.Playground", "FunTools.Playground\FunTools.Playground.csproj", "{CBA25C7F-CCC5-49D1-9A68-C52ED5A5752C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{38221AC4-ACB7-497D-B1F9-AFAA12E6AA68}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\packages.config = .nuget\packages.config
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

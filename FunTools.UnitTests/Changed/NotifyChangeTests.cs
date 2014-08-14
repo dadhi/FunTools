@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel;
-using FluentAssertions;
 using FunTools.Changed;
 using NUnit.Framework;
 
@@ -46,7 +45,7 @@ namespace FunTools.UnitTests.Changed
 
 			// Act
 			// Assert
-			AssertionExtensions.ShouldThrow<NotSupportedException>(() => number.Value = 2)
+			Assert.Throws<DryToolsException>(() => number.Value = 2)
 				.Where(ex => ex.Message.Contains("Setter is not provided, therefore value assignment is not supported"));
 		}
 
@@ -118,7 +117,7 @@ namespace FunTools.UnitTests.Changed
 			GC.Collect();
 
 			// Assert
-			AssertionExtensions.ShouldNotThrow(() =>
+			Assert.DoesNotThrow(() =>
 			{
 				model.Count.Value += 1;
 				model.Message.Value = "hey";
@@ -161,7 +160,7 @@ namespace FunTools.UnitTests.Changed
 		{
 			// Arrange
 			var model = new CustomModel();
-			var count = model.SelectNotifyChange(x => x.Count);
+			var count = model.GetNotifyChangeOfProperty(x => x.Count);
 
 			// Act
 			model.Count = 1;
@@ -176,7 +175,7 @@ namespace FunTools.UnitTests.Changed
 		{
 			// Arrange
 			var model = new CustomModel();
-			var count = model.SelectNotifyChange(x => x.Count);
+			var count = model.GetNotifyChangeOfProperty(x => x.Count);
 			var raised = false;
 			count.PropertyChanged += (sender, args) => raised = true;
 
@@ -192,7 +191,7 @@ namespace FunTools.UnitTests.Changed
 		{
 			// Arrange
 			var model = new CustomModel();
-			var count = model.SelectNotifyChange(x => x.Count);
+			var count = model.GetNotifyChangeOfProperty(x => x.Count);
 			var raised = false;
 			count.PropertyChanged += (sender, args) => raised = true;
 
@@ -212,7 +211,7 @@ namespace FunTools.UnitTests.Changed
 			// Act
 			// Assert
 			var x = string.Empty;
-			AssertionExtensions.ShouldNotThrow(() => x = obj.ToString());
+			Assert.DoesNotThrow(() => x = obj.ToString());
 			x.Should().Be("Value: Null");
 		}
 
@@ -260,7 +259,7 @@ namespace FunTools.UnitTests.Changed
 		{
 			// Arrange
 			var counter = NotifyChange.Of(1).ValidateThat(x => x > 0);
-			var validationError = counter.SelectNotifyChange(x => x.Error);
+			var validationError = counter.GetNotifyChangeOfProperty(x => x.Error);
 			var raised = false;
 			validationError.PropertyChanged += (sender, args) => raised = true;
 

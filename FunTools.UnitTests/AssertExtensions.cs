@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 
-namespace DryTools.UnitTests
+namespace FunTools.UnitTests
 {
     public static class AssertExtensions
     {

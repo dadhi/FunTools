@@ -15,9 +15,7 @@ namespace FunTools.Changed
         {
             _getter = getter.ThrowIfNull();
             _setter = setter ?? NotifyChange.Defaults.SetterIsNotSupported;
-
             _changeCondition = changeCondition ?? NotifyChange.Defaults.ChangeAlways;
-
             _sourceNotifyCondition = sourceNotifyCondition ?? NotifyChange.Defaults.SourceAlwaysNotifies;
 
             if (changeSources != null && changeSources.Length != 0)
@@ -67,13 +65,9 @@ namespace FunTools.Changed
         #region Implementation
 
         private readonly Func<T> _getter;
-
         private readonly Action<T> _setter;
-
         private readonly Func<T, bool> _changeCondition;
-
         private readonly Func<object, PropertyChangedEventArgs, bool> _sourceNotifyCondition;
-
         private void SubscribeToChangeSourcesWeakly(INotifyPropertyChanged[] sources)
         {
             var selfWeakRef = new WeakReference(this);
@@ -154,7 +148,7 @@ namespace FunTools.Changed
             return Select(() => selector(source.Value), source);
         }
 
-        public static NotifyChange<TProperty> SelectNotifyChange<TModel, TProperty>(
+        public static NotifyChange<TProperty> GetNotifyChangeOfProperty<TModel, TProperty>(
             this TModel model,
             Expression<Func<TModel, TProperty>> property,
             Func<TProperty, bool> modelNotifyCondition = null)
@@ -190,7 +184,7 @@ namespace FunTools.Changed
 
             public static void SetterIsNotSupported<T>(T _)
             {
-                throw new NotSupportedException("Setter is not provided, therefore value assignment is not supported");
+                throw "Setter is not provided, therefore value assignment is not supported".Of();
             }
 
             public static bool ChangeAlways<T>(T _)
