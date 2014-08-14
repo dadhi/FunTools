@@ -5,4 +5,4 @@ os: Windows Server 2012
 test: off
  
 build_script:
-  - .\Ball.bat -nopause
+  - .\BuildScripts\Ball.bat -nopause
