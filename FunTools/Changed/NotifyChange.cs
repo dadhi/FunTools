@@ -168,14 +168,18 @@ namespace FunTools.Changed
                 model);
         }
 
-        public static NotifyChange<T> ValidateThat<T>(
-            this NotifyChange<T> source,
-            Func<T, bool> isValid,
-            string error = null)
+        public static NotifyChange<T> ValidIf<T>(this NotifyChange<T> source,
+            Func<T, bool> validIf, string error = null)
         {
-            isValid.ThrowIfNull();
-            source.Validate = x => isValid(x) ? null : (error ?? Defaults.ValidationErrorMessage);
+            validIf.ThrowIfNull();
+            source.Validate = x => validIf(x) ? null : (error ?? Defaults.InvalidError);
             return source;
+        }
+
+        public static NotifyChange<T> ValidIfNot<T>(this NotifyChange<T> source, 
+            Func<T, bool> validIfNot, string error = null)
+        {
+            return source.ValidIf(x => !validIfNot(x), error);
         }
 
         public static class Defaults
@@ -202,7 +206,7 @@ namespace FunTools.Changed
                 return null;
             }
 
-            public static string ValidationErrorMessage = "Invalid value!";
+            public static string InvalidError = "Invalid value!";
         }
 
         #region Implementation

@@ -222,7 +222,7 @@ namespace FunTools.UnitTests.Changed
 			var counter = NotifyChange.Of(-1);
 
 			// Act
-			counter = counter.ValidateThat(i => i > 0, "Should be positive");
+			counter = counter.ValidIf(i => i > 0, "Should be positive");
 
 			// Assert
 			counter.Error.Should().Be("Should be positive");
@@ -235,7 +235,7 @@ namespace FunTools.UnitTests.Changed
 			var counter = NotifyChange.Of(-1);
 
 			// Act
-			counter = counter.ValidateThat(i => i > 0, "Should be positive");
+			counter = counter.ValidIf(i => i > 0, "Should be positive");
 
 			// Assert
 			counter["hey"].Should().Be(counter.Error);
@@ -248,17 +248,17 @@ namespace FunTools.UnitTests.Changed
 			var counter = NotifyChange.Of(-1);
 
 			// Act
-			counter = counter.ValidateThat(i => i > 0);
+			counter = counter.ValidIf(i => i > 0);
 
 			// Assert
-			counter.Error.Should().Be(NotifyChange.Defaults.ValidationErrorMessage);
+			counter.Error.Should().Be(NotifyChange.Defaults.InvalidError);
 		}
 
 		[Test]
 		public void Given_valid_source_NC_and_another_NC_with_source_Error_property_When_I_assign_invalid_value_to_source_Then_Error_PC_should_be_raised()
 		{
 			// Arrange
-			var counter = NotifyChange.Of(1).ValidateThat(x => x > 0);
+			var counter = NotifyChange.Of(1).ValidIf(x => x > 0);
 			var validationError = counter.GetNotifyChangeOfProperty(x => x.Error);
 			var raised = false;
 			validationError.PropertyChanged += (sender, args) => raised = true;
